@@ -1,21 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { saveVoiceSettings } from "@/app/settings/actions";
+import { VOICE_STYLES, pickVoice, speakText, type VoiceStyle } from "@/lib/tts";
+import type { Language } from "@/lib/nlu";
 
-type Language = "en-US" | "es-ES";
-type Style = "warm" | "professional" | "energetic";
+type Style = VoiceStyle;
 
 const LANGUAGES: { value: Language; label: string }[] = [
   { value: "en-US", label: "English (US)" },
   { value: "es-ES", label: "Spanish (Spain)" },
 ];
 
-const STYLES: { value: Style; label: string; description: string; pitch: number; rate: number }[] = [
-  { value: "warm", label: "Warm & Friendly", description: "Slower, softer — good for support & healthcare.", pitch: 1.12, rate: 0.94 },
-  { value: "professional", label: "Professional", description: "Even pace, neutral tone — good for sales & ops.", pitch: 1.0, rate: 1.0 },
-  { value: "energetic", label: "Energetic", description: "Faster, brighter — good for retail & promos.", pitch: 1.18, rate: 1.14 },
-];
+const STYLES = VOICE_STYLES;
 
 type Initial = {
   personaName: string;
@@ -35,7 +32,6 @@ export function VoiceSettingsPanel({ initial }: { initial: Initial }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -48,29 +44,15 @@ export function VoiceSettingsPanel({ initial }: { initial: Initial }) {
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
   }, []);
 
-  const langPrefix = language.split("-")[0];
-  const matchingVoice =
-    voices.find((v) => v.lang === language) ??
-    voices.find((v) => v.lang.toLowerCase().startsWith(langPrefix)) ??
-    null;
+  const matchingVoice = pickVoice(voices, language);
 
   function handlePreview() {
     if (!speechSupported) return;
-    window.speechSynthesis.cancel();
-
-    const activeStyle = STYLES.find((s) => s.value === style)!;
-    const utterance = new SpeechSynthesisUtterance(greeting || "Hi, how can I help you today?");
-    utterance.lang = language;
-    utterance.pitch = activeStyle.pitch;
-    utterance.rate = activeStyle.rate;
-    if (matchingVoice) utterance.voice = matchingVoice;
-
-    utterance.onstart = () => setSpeaking(true);
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    speakText(greeting || "Hi, how can I help you today?", { language, style, voices }, {
+      onStart: () => setSpeaking(true),
+      onEnd: () => setSpeaking(false),
+      onError: () => setSpeaking(false),
+    });
   }
 
   function handleStop() {

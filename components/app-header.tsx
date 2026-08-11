@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
 
-export function AppHeader({ active }: { active: "dashboard" | "settings" | "voice-test" }) {
+export function AppHeader({ active }: { active: "dashboard" | "settings" | "voice-test" | "bots" }) {
   return (
     <header className="dash-header">
       <div className="wrap">
@@ -33,6 +33,9 @@ export function AppHeader({ active }: { active: "dashboard" | "settings" | "voic
           </Link>
           <Link href="/voice-test" className={active === "voice-test" ? "active" : ""}>
             Voice Test
+          </Link>
+          <Link href="/bots" className={active === "bots" ? "active" : ""}>
+            Bots
           </Link>
         </nav>
         <LogoutButton />
