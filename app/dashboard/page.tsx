@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { LogoutButton } from "@/components/logout-button";
+import { AppHeader } from "@/components/app-header";
 import { TrendChart } from "@/components/trend-chart";
 import { OutcomeBreakdown } from "@/components/outcome-breakdown";
 import { TopicsList } from "@/components/topics-list";
@@ -50,30 +50,7 @@ export default async function DashboardPage({
 
   return (
     <div className="dash-shell">
-      <header className="dash-header">
-        <div className="wrap">
-          <Link href="/" className="logo">
-            <span className="logo-mark">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z"
-                  stroke="#0b0c14"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M19 11v1a7 7 0 01-14 0v-1M12 19v3"
-                  stroke="#0b0c14"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-            Voice Chatbots Platform
-          </Link>
-          <LogoutButton />
-        </div>
-      </header>
+      <AppHeader active="dashboard" />
 
       <main className="dash-main">
         <div className="wrap">
