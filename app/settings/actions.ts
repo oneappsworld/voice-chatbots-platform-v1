@@ -8,6 +8,13 @@ import {
   ZendeskApiError,
   type ZendeskCredentials,
 } from "@/lib/zendesk";
+import {
+  verifyApiKey,
+  cloneVoice,
+  deleteVoice,
+  textToSpeech,
+  ElevenLabsApiError,
+} from "@/lib/elevenlabs";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -130,4 +137,123 @@ export async function saveVoiceSettings(input: {
   revalidatePath("/settings");
   if (error) return { ok: false as const, error: error.message };
   return { ok: true as const };
+}
+
+export async function connectElevenLabs(apiKey: string) {
+  const { supabase, user } = await requireUser();
+  const key = apiKey.trim();
+
+  try {
+    await verifyApiKey(key);
+
+    await supabase.from("elevenlabs_connections").upsert(
+      { user_id: user.id, api_key: key, status: "connected", last_error: null },
+      { onConflict: "user_id" }
+    );
+
+    revalidatePath("/settings");
+    return { ok: true as const };
+  } catch (err) {
+    const message = err instanceof ElevenLabsApiError ? err.message : "Connection failed.";
+
+    await supabase.from("elevenlabs_connections").upsert(
+      { user_id: user.id, api_key: key, status: "error", last_error: message },
+      { onConflict: "user_id" }
+    );
+
+    revalidatePath("/settings");
+    return { ok: false as const, error: message };
+  }
+}
+
+export async function disconnectElevenLabs() {
+  const { supabase, user } = await requireUser();
+
+  const { data: connection } = await supabase
+    .from("elevenlabs_connections")
+    .select("api_key, voice_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (connection?.voice_id) {
+    await deleteVoice(connection.api_key, connection.voice_id);
+  }
+
+  await supabase.from("elevenlabs_connections").delete().eq("user_id", user.id);
+  await supabase.storage
+    .from("tts-cache")
+    .list(user.id)
+    .then(async ({ data }) => {
+      if (data && data.length > 0) {
+        await supabase.storage.from("tts-cache").remove(data.map((f) => `${user.id}/${f.name}`));
+      }
+    });
+
+  revalidatePath("/settings");
+  return { ok: true as const };
+}
+
+export async function cloneVoiceFromSample(formData: FormData) {
+  const { supabase, user } = await requireUser();
+
+  const file = formData.get("file") as File | null;
+  const voiceName = (formData.get("voiceName") as string) || "My Cloned Voice";
+  if (!file || file.size === 0) {
+    return { ok: false as const, error: "Choose an audio sample first." };
+  }
+
+  const { data: connection } = await supabase
+    .from("elevenlabs_connections")
+    .select("api_key, status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!connection || connection.status !== "connected") {
+    return { ok: false as const, error: "Connect your ElevenLabs API key before cloning." };
+  }
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const { voiceId } = await cloneVoice(connection.api_key, voiceName.trim(), {
+      buffer,
+      fileName: file.name,
+      mimeType: file.type || "audio/mpeg",
+    });
+
+    await supabase
+      .from("elevenlabs_connections")
+      .update({ voice_id: voiceId, voice_name: voiceName.trim(), last_error: null })
+      .eq("user_id", user.id);
+
+    revalidatePath("/settings");
+    return { ok: true as const, voiceId, voiceName: voiceName.trim() };
+  } catch (err) {
+    const message = err instanceof ElevenLabsApiError ? err.message : "Cloning failed.";
+    await supabase.from("elevenlabs_connections").update({ last_error: message }).eq("user_id", user.id);
+    revalidatePath("/settings");
+    return { ok: false as const, error: message };
+  }
+}
+
+export async function previewElevenLabsVoice(text: string) {
+  const { supabase, user } = await requireUser();
+
+  const { data: connection } = await supabase
+    .from("elevenlabs_connections")
+    .select("api_key, voice_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!connection?.voice_id) {
+    return { ok: false as const, error: "Clone a voice first." };
+  }
+
+  try {
+    const audio = await textToSpeech(connection.api_key, connection.voice_id, text);
+    const base64 = Buffer.from(audio).toString("base64");
+    return { ok: true as const, audioDataUri: `data:audio/mpeg;base64,${base64}` };
+  } catch (err) {
+    const message = err instanceof ElevenLabsApiError ? err.message : "Preview failed.";
+    return { ok: false as const, error: message };
+  }
 }

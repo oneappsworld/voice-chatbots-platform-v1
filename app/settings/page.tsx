@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { CrmConnectionPanel } from "@/components/crm-connection-panel";
 import { VoiceSettingsPanel } from "@/components/voice-settings-panel";
+import { ElevenLabsPanel } from "@/components/elevenlabs-panel";
 
 export const metadata: Metadata = {
   title: "Settings — Voice Chatbots Platform",
@@ -19,7 +20,7 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  const [{ data: connection }, { data: voiceSettings }] = await Promise.all([
+  const [{ data: connection }, { data: voiceSettings }, { data: elevenlabs }] = await Promise.all([
     supabase
       .from("crm_connections")
       .select("status, subdomain, agent_email, connected_agent_name, last_error")
@@ -28,6 +29,11 @@ export default async function SettingsPage() {
     supabase
       .from("voice_settings")
       .select("persona_name, greeting, language, style")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("elevenlabs_connections")
+      .select("status, voice_id, voice_name, last_error")
       .eq("user_id", user.id)
       .maybeSingle(),
   ]);
@@ -82,6 +88,24 @@ export default async function SettingsPage() {
               />
             </section>
           </div>
+
+          <section className="panel" style={{ marginTop: 20 }}>
+            <div className="panel-title">Voice cloning (ElevenLabs)</div>
+            <div className="panel-subtitle">
+              Clone your own voice from a short sample for natural, expressive speech —
+              replaces the browser&apos;s built-in voice for FAQ and Order Status bot
+              responses once connected. Billed by ElevenLabs; FAQ answers are cached after
+              the first generation to cut ongoing cost.
+            </div>
+            <ElevenLabsPanel
+              initial={{
+                status: (elevenlabs?.status as "connected" | "disconnected" | "error") ?? "disconnected",
+                voiceId: elevenlabs?.voice_id ?? null,
+                voiceName: elevenlabs?.voice_name ?? null,
+                lastError: elevenlabs?.last_error ?? null,
+              }}
+            />
+          </section>
         </div>
       </main>
     </div>

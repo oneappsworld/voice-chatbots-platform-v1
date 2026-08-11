@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { checkOrderStatus, listSampleOrderIds } from "@/app/bots/actions";
 import { SpeechRecognizer } from "@/components/speech-recognizer";
-import { speakText } from "@/lib/tts";
+import { playBotResponse } from "@/lib/play-bot-response";
 import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
 
@@ -40,6 +40,7 @@ export function OrderStatusBotPanel({
   const [speaking, setSpeaking] = useState(false);
   const [sampleIds, setSampleIds] = useState<string[]>([]);
   const [lastStatus, setLastStatus] = useState<string | null>(null);
+  const [voiceEngine, setVoiceEngine] = useState<"elevenlabs" | "browser" | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -61,11 +62,12 @@ export function OrderStatusBotPanel({
       const result = await checkOrderStatus(text, language);
       setLastStatus(result.found && "order" in result && result.order ? result.order.status : null);
       setTurns((prev) => [...prev, { who: "bot", text: result.answerText, found: result.found }]);
-      speakText(result.answerText, { language, style, voices }, {
-        onStart: () => setSpeaking(true),
-        onEnd: () => setSpeaking(false),
-        onError: () => setSpeaking(false),
-      });
+      const played = await playBotResponse(
+        result.answerText,
+        { language, style, voices },
+        { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) }
+      );
+      setVoiceEngine(played.engine);
     } finally {
       setChecking(false);
     }
@@ -136,7 +138,7 @@ export function OrderStatusBotPanel({
 
       {speaking && (
         <p className="stt-listening-label" style={{ marginBottom: 14 }}>
-          <span className="stt-dot" /> Speaking…
+          <span className="stt-dot" /> Speaking{voiceEngine === "elevenlabs" ? " (cloned voice)" : voiceEngine === "browser" ? " (browser voice)" : ""}…
         </p>
       )}
 

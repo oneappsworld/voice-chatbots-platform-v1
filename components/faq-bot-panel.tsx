@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { askFaqBot } from "@/app/bots/actions";
 import { SpeechRecognizer } from "@/components/speech-recognizer";
-import { speakText } from "@/lib/tts";
+import { playBotResponse } from "@/lib/play-bot-response";
 import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
 
@@ -54,6 +54,7 @@ export function FaqBotPanel({
   const [turns, setTurns] = useState<Turn[]>([]);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [speaking, setSpeaking] = useState(false);
+  const [voiceEngine, setVoiceEngine] = useState<"elevenlabs" | "browser" | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -73,11 +74,12 @@ export function FaqBotPanel({
         ...prev,
         { who: "bot", text: result.answerText, intent: result.nlu.intent, confidence: result.nlu.confidence },
       ]);
-      speakText(result.answerText, { language, style, voices }, {
-        onStart: () => setSpeaking(true),
-        onEnd: () => setSpeaking(false),
-        onError: () => setSpeaking(false),
-      });
+      const played = await playBotResponse(
+        result.answerText,
+        { language, style, voices, cacheKey: `faq/${language}/${result.nlu.intent}` },
+        { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) }
+      );
+      setVoiceEngine(played.engine);
     } finally {
       setAsking(false);
     }
@@ -146,7 +148,7 @@ export function FaqBotPanel({
 
       {speaking && (
         <p className="stt-listening-label" style={{ marginBottom: 14 }}>
-          <span className="stt-dot" /> Speaking…
+          <span className="stt-dot" /> Speaking{voiceEngine === "elevenlabs" ? " (cloned voice)" : voiceEngine === "browser" ? " (browser voice)" : ""}…
         </p>
       )}
 
