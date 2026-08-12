@@ -258,13 +258,23 @@ export type OrgAnalytics = {
 export async function getOrgAnalytics(rangeDays: number): Promise<{ ok: true; analytics: OrgAnalytics } | { ok: false; error: string }> {
   const { supabase } = await requireOrgAdmin();
 
+  // computeDashboardMetrics needs the requested range plus an equal prior
+  // period for the vs-prior-period comparison — never all-time history.
+  const rangeCutoff = new Date();
+  rangeCutoff.setDate(rangeCutoff.getDate() - rangeDays * 2);
+
   // No .eq('user_id', ...) filter here on purpose — the additive "Org admins
   // can view all member X" RLS policies (see migration 20260812200000) let
   // an admin's plain select naturally return every active team member's
   // rows, not just their own. Same pattern used by every action below.
+  // leads/appointments/handoffs stay unfiltered by date — the UI presents
+  // them as all-time totals, not range-scoped like call volume.
   const [{ data: members }, { data: calls }, { data: leads }, { data: appointments }, { data: handoffs }] = await Promise.all([
     supabase.from("organization_members").select("id").eq("status", "active"),
-    supabase.from("calls").select("occurred_at, department, topic, outcome, duration_seconds"),
+    supabase
+      .from("calls")
+      .select("occurred_at, department, topic, outcome, duration_seconds")
+      .gte("occurred_at", rangeCutoff.toISOString()),
     supabase.from("leads").select("qualification, score"),
     supabase.from("appointments").select("status, scheduled_at"),
     supabase.from("handoffs").select("source_bot, reason, assigned_agent, created_at").order("created_at", { ascending: false }),

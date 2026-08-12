@@ -39,10 +39,16 @@ export default async function DashboardPage({
     ? Number(params.range)
     : 30;
 
+  // computeDashboardMetrics needs the requested range plus an equal prior
+  // period for the vs-prior-period comparison — never all-time history.
+  const rangeCutoff = new Date();
+  rangeCutoff.setDate(rangeCutoff.getDate() - rangeDays * 2);
+
   const { data: calls } = await supabase
     .from("calls")
     .select("occurred_at, department, topic, outcome, duration_seconds")
     .eq("user_id", user.id)
+    .gte("occurred_at", rangeCutoff.toISOString())
     .order("occurred_at", { ascending: true });
 
   const metrics = computeDashboardMetrics((calls ?? []) as CallRow[], rangeDays);
