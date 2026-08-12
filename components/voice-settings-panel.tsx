@@ -34,7 +34,11 @@ export function VoiceSettingsPanel({ initial }: { initial: Initial }) {
   const [speechSupported, setSpeechSupported] = useState(true);
 
   useEffect(() => {
+    // Must run post-mount, not in a lazy useState initializer: the server
+    // can't detect window.speechSynthesis, so an initializer would
+    // mismatch the server-rendered "supported" HTML during hydration.
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSpeechSupported(false);
       return;
     }

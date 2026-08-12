@@ -59,6 +59,10 @@ export function SpeechRecognizer({
   const startTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // Must run post-mount, not in a lazy useState initializer: the server
+    // can't detect window.SpeechRecognition, so an initializer would
+    // mismatch the server-rendered "supported" HTML during hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSupported(getRecognitionCtor() !== null);
   }, []);
 
