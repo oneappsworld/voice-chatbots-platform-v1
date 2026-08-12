@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
-import { getOrgContext } from "@/app/admin/actions";
+import { getOrgContext } from "@/lib/org-context";
 
 export async function AppHeader({
   active,

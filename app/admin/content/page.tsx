@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { AppHeader } from "@/components/app-header";
 import { AdminTabs } from "@/components/admin-tabs";
 import { ContentModerationPanel } from "@/components/content-moderation-panel";
-import { getOrgContext, listBotResponseOverrides } from "@/app/admin/actions";
+import { listBotResponseOverrides } from "@/app/admin/actions";
+import { getOrgContext } from "@/lib/org-context";
 import { DEFAULT_ANSWERS } from "@/lib/faq";
 
 export const metadata: Metadata = {

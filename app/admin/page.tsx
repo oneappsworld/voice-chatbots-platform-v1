@@ -6,7 +6,8 @@ import { AdminTabs } from "@/components/admin-tabs";
 import { TrendChart } from "@/components/trend-chart";
 import { OutcomeBreakdown } from "@/components/outcome-breakdown";
 import { TopicsList } from "@/components/topics-list";
-import { getOrgContext, getOrgAnalytics } from "@/app/admin/actions";
+import { getOrgAnalytics } from "@/app/admin/actions";
+import { getOrgContext } from "@/lib/org-context";
 import { formatDuration } from "@/lib/dashboard";
 
 export const metadata: Metadata = {

@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { AppHeader } from "@/components/app-header";
 import { AdminTabs } from "@/components/admin-tabs";
 import { AdminSettingsPanel } from "@/components/admin-settings-panel";
-import { getOrgContext, getOrgSettings } from "@/app/admin/actions";
+import { getOrgSettings } from "@/app/admin/actions";
+import { getOrgContext } from "@/lib/org-context";
 
 export const metadata: Metadata = {
   title: "Admin Settings — Voice Chatbots Platform",
