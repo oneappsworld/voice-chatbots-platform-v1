@@ -426,7 +426,7 @@ footer{border-top:1px solid var(--card-border);padding:56px 0 32px;}
 .dash-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start;}
 .panel{
   background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
-  padding:26px;
+  padding:26px;min-width:0;
 }
 .panel-title{font-size:1.05rem;font-weight:700;margin-bottom:4px;}
 .panel-subtitle{color:var(--text-faint);font-size:0.84rem;margin-bottom:20px;}
