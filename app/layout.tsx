@@ -9,10 +9,26 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+const title = "Voice Chatbots Platform — Easy-to-Deploy, ROI-Driven Voice AI";
+const description =
+  "Pre-trained, no-code voice AI agents for sales, support, and internal ops — live in days, not months. Deploy free for 14 days.";
+
 export const metadata: Metadata = {
-  title: "Voice Chatbots Platform — Easy-to-Deploy, ROI-Driven Voice AI",
-  description:
-    "Pre-trained, no-code voice AI agents for sales, support, and internal ops. Live in days, not months. Starting at $500/month with a 14-day free trial.",
+  metadataBase: new URL("https://voice-chatbots-platform-v1.vercel.app"),
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    images: [{ url: "/og-image.png", width: 2000, height: 1050, alt: title }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
