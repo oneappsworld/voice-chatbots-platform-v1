@@ -577,16 +577,10 @@ export default function Home() {
               </div>
               <div className="footer-col">
                 <h4>Industries</h4>
-                <a href="#">Healthcare</a>
-                <a href="#">E-Commerce</a>
-                <a href="#">Real Estate</a>
-                <a href="#">Home Services</a>
-              </div>
-              <div className="footer-col">
-                <h4>Company</h4>
-                <a href="#">About</a>
-                <a href="#">Contact</a>
-                <a href="#">Privacy</a>
+                <Link href="/#features">Healthcare</Link>
+                <Link href="/#features">E-Commerce</Link>
+                <Link href="/#features">Real Estate</Link>
+                <Link href="/#features">Home Services</Link>
               </div>
             </div>
           </div>
