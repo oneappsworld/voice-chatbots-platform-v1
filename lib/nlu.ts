@@ -18,6 +18,32 @@ export type Intent =
   | "request"
   | "unknown";
 
+export const ALL_INTENTS: Intent[] = [
+  "greeting",
+  "goodbye",
+  "booking_scheduling",
+  "order_status",
+  "billing",
+  "password_reset",
+  "complaint",
+  "question",
+  "request",
+  "unknown",
+];
+
+export const INTENT_LABELS: Record<Intent, string> = {
+  greeting: "Greeting",
+  goodbye: "Goodbye",
+  booking_scheduling: "Booking / scheduling",
+  order_status: "Order status",
+  billing: "Billing",
+  password_reset: "Password reset",
+  complaint: "Complaint",
+  question: "Question",
+  request: "General request",
+  unknown: "Unrecognized",
+};
+
 export type Entities = {
   emails: string[];
   phones: string[];
@@ -100,7 +126,7 @@ function escapeRegExp(s: string) {
 // substrings inside other words (e.g. "hi" inside "shipped" or "this").
 // \b doesn't work reliably across accented characters (dónde, mañana), so
 // boundaries are defined as "not a letter/digit" instead of relying on \w.
-function containsPhrase(haystack: string, phrase: string) {
+export function containsPhrase(haystack: string, phrase: string) {
   const pattern = new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(phrase)}($|[^\\p{L}\\p{N}])`, "iu");
   return pattern.test(haystack);
 }

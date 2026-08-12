@@ -4,6 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { answerFaq } from "@/lib/faq";
 import { extractOrderId, formatOrderAnswer, type OrderStatus } from "@/lib/orders";
 import { textToSpeech, ElevenLabsApiError } from "@/lib/elevenlabs";
+import { generateSlots, type Slot, type Service } from "@/lib/appointment-booking";
+import { type LeadAnswers, type LeadQualification } from "@/lib/lead-qualification";
+import {
+  buildContextSummary,
+  pickSimulatedAgent,
+  sensitivityToThreshold,
+  type EscalationReason,
+  type EscalationSensitivity,
+  type TranscriptTurn,
+} from "@/lib/escalation";
 import type { Language } from "@/lib/nlu";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -16,9 +26,42 @@ async function requireUser() {
   return { supabase, user };
 }
 
+async function getOrganizationId(supabase: SupabaseClient, userId: string): Promise<string | null> {
+  const { data } = await supabase.from("profiles").select("organization_id").eq("id", userId).maybeSingle();
+  return (data?.organization_id as string | undefined) ?? null;
+}
+
 export async function askFaqBot(text: string, language: Language) {
-  await requireUser();
-  return answerFaq(text, language);
+  const { supabase, user } = await requireUser();
+  const base = answerFaq(text, language);
+
+  const organizationId = await getOrganizationId(supabase, user.id);
+  if (!organizationId) return base;
+
+  const { data: override } = await supabase
+    .from("bot_responses")
+    .select("response_text")
+    .eq("organization_id", organizationId)
+    .eq("language", language)
+    .eq("intent", base.nlu.intent)
+    .maybeSingle();
+
+  return override?.response_text ? { ...base, answerText: override.response_text } : base;
+}
+
+/** How many consecutive failed turns a bot should tolerate before escalating — configurable org-wide from Admin Settings. */
+export async function getEscalationThreshold(): Promise<number> {
+  const { supabase, user } = await requireUser();
+  const organizationId = await getOrganizationId(supabase, user.id);
+  if (!organizationId) return sensitivityToThreshold("normal");
+
+  const { data } = await supabase
+    .from("org_settings")
+    .select("escalation_sensitivity")
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  return sensitivityToThreshold((data?.escalation_sensitivity as EscalationSensitivity | undefined) ?? "normal");
 }
 
 export async function checkOrderStatus(text: string, language: Language) {
@@ -141,4 +184,104 @@ export async function listSampleOrderIds() {
     .order("updated_at", { ascending: false })
     .limit(4);
   return (data ?? []).map((o) => o.order_number);
+}
+
+export async function getAvailableSlots(language: Language): Promise<Slot[]> {
+  const { supabase, user } = await requireUser();
+  const { data } = await supabase
+    .from("appointments")
+    .select("scheduled_at")
+    .eq("user_id", user.id)
+    .eq("status", "booked");
+
+  const bookedIso = (data ?? []).map((a) => new Date(a.scheduled_at).toISOString());
+  return generateSlots(bookedIso, language);
+}
+
+export async function bookAppointment(payload: {
+  service: Service;
+  slot: Slot;
+  customerName: string;
+  contact: string;
+}) {
+  const { supabase, user } = await requireUser();
+
+  const { error } = await supabase.from("appointments").insert({
+    user_id: user.id,
+    service: payload.service.value,
+    customer_name: payload.customerName,
+    contact: payload.contact,
+    scheduled_at: payload.slot.iso,
+  });
+
+  if (error) {
+    // Most likely someone else grabbed the same slot between fetch and booking.
+    return { ok: false as const, error: error.message };
+  }
+  return { ok: true as const };
+}
+
+export async function saveLead(payload: {
+  answers: LeadAnswers;
+  score: number;
+  qualification: LeadQualification;
+  transcript: TranscriptTurn[];
+}) {
+  const { supabase, user } = await requireUser();
+
+  const { error } = await supabase.from("leads").insert({
+    user_id: user.id,
+    full_name: payload.answers.name ?? null,
+    email: payload.answers.email ?? null,
+    company: payload.answers.company ?? null,
+    team_size: payload.answers.team_size ?? null,
+    use_case: payload.answers.use_case ?? null,
+    budget_range: payload.answers.budget ?? null,
+    timeline: payload.answers.timeline ?? null,
+    score: payload.score,
+    qualification: payload.qualification,
+    transcript: payload.transcript,
+  });
+
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
+/**
+ * Simulates a live-agent handoff: picks an agent, builds a context brief
+ * from the conversation so far, and writes a `handoffs` row a real agent
+ * dashboard would poll. Any bot can call this the moment it detects an
+ * escalation trigger — see lib/escalation.ts for the trigger detection.
+ */
+export async function escalateToHuman(payload: {
+  sourceBot: string;
+  reason: EscalationReason;
+  turns: TranscriptTurn[];
+  language: Language;
+  collected?: Record<string, string | undefined>;
+}) {
+  const { supabase, user } = await requireUser();
+
+  const agentName = pickSimulatedAgent(payload.language);
+  const contextSummary = buildContextSummary(payload.turns, payload.language, {
+    botName: payload.sourceBot,
+    collected: payload.collected,
+  });
+
+  const { data, error } = await supabase
+    .from("handoffs")
+    .insert({
+      user_id: user.id,
+      source_bot: payload.sourceBot,
+      reason: payload.reason,
+      context_summary: contextSummary,
+      transcript: payload.turns,
+      assigned_agent: agentName,
+      status: "connected",
+    })
+    .select("id")
+    .single();
+
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const, handoffId: data.id as string, agentName, contextSummary };
 }

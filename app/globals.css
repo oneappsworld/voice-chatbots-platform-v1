@@ -609,6 +609,44 @@ textarea.form-input{resize:vertical;font-family:inherit;}
   .chat-turn{max-width:100%;}
 }
 
+/* Human handoff / escalation */
+.handoff-card{
+  margin-top:18px;background:var(--bg-alt);border:1px solid rgba(255,193,90,0.35);border-radius:12px;
+  padding:16px 18px;
+}
+.handoff-card-head{display:flex;gap:10px;align-items:flex-start;}
+.handoff-dot{width:9px;height:9px;border-radius:50%;background:var(--status-warning);margin-top:6px;flex-shrink:0;}
+.handoff-title{font-weight:700;font-size:0.94rem;}
+.handoff-subtitle{color:var(--text-dim);font-size:0.82rem;margin-top:2px;}
+.handoff-context{margin-top:14px;padding-top:14px;border-top:1px solid var(--card-border);}
+.handoff-context-label{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-faint);margin-bottom:8px;}
+.handoff-context-body{
+  white-space:pre-wrap;font-family:inherit;color:var(--text-dim);font-size:0.84rem;line-height:1.6;
+}
+
+/* Lead qualification / appointment result cards */
+.result-card{
+  margin-top:18px;background:var(--bg-alt);border:1px solid var(--card-border);border-radius:12px;padding:16px 18px;
+}
+.result-card-title{font-weight:700;font-size:0.96rem;margin-bottom:10px;}
+.result-badge{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:0.76rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.03em;
+}
+.result-badge-qualified{background:rgba(55,230,196,0.14);color:var(--status-good);}
+.result-badge-nurture{background:rgba(255,193,90,0.14);color:var(--status-warning);}
+.result-badge-disqualified{background:rgba(255,255,255,0.06);color:var(--text-dim);}
+.result-row{display:flex;justify-content:space-between;font-size:0.86rem;padding:6px 0;border-top:1px solid var(--card-border);color:var(--text-dim);}
+.result-row:first-of-type{border-top:none;}
+.result-row span:last-child{color:var(--text);font-weight:600;}
+
+.escalate-row{margin-top:14px;display:flex;justify-content:flex-end;}
+.escalate-link{
+  background:none;border:none;color:var(--text-faint);font-size:0.8rem;font-weight:600;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px;
+}
+.escalate-link:hover{color:var(--status-warning);}
+
 @media (max-width: 900px){
   .nav-links{display:none;}
   .nav-toggle{display:block;}

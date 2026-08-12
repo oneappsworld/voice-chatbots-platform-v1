@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
+import { getOrgContext } from "@/app/admin/actions";
 
-export function AppHeader({ active }: { active: "dashboard" | "settings" | "voice-test" | "bots" }) {
+export async function AppHeader({
+  active,
+}: {
+  active: "dashboard" | "settings" | "voice-test" | "bots" | "admin";
+}) {
+  const org = await getOrgContext();
+
   return (
     <header className="dash-header">
       <div className="wrap">
@@ -37,6 +44,11 @@ export function AppHeader({ active }: { active: "dashboard" | "settings" | "voic
           <Link href="/bots" className={active === "bots" ? "active" : ""}>
             Bots
           </Link>
+          {org?.isAdmin && (
+            <Link href="/admin" className={active === "admin" ? "active" : ""}>
+              Admin
+            </Link>
+          )}
         </nav>
         <LogoutButton />
       </div>

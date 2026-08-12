@@ -11,7 +11,7 @@ export type FaqAnswer = {
   isOrderHandoff: boolean;
 };
 
-const ANSWERS: Record<Language, Record<Intent, string>> = {
+export const DEFAULT_ANSWERS: Record<Language, Record<Intent, string>> = {
   "en-US": {
     greeting: "Hi there! I'm the virtual assistant. How can I help you today?",
     goodbye: "Thanks for reaching out — have a great day!",
@@ -57,7 +57,7 @@ export function answerFaq(text: string, language: Language): FaqAnswer {
   const nlu = classifyIntent(text, language);
   return {
     nlu,
-    answerText: ANSWERS[language][nlu.intent],
+    answerText: DEFAULT_ANSWERS[language][nlu.intent],
     isOrderHandoff: nlu.intent === "order_status",
   };
 }

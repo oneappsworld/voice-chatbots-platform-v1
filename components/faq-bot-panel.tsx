@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { askFaqBot } from "@/app/bots/actions";
+import { askFaqBot, escalateToHuman, getEscalationThreshold } from "@/app/bots/actions";
 import { SpeechRecognizer } from "@/components/speech-recognizer";
+import { HandoffCard } from "@/components/handoff-card";
 import { playBotResponse } from "@/lib/play-bot-response";
+import { checkEscalation, handoffMessage, type EscalationReason } from "@/lib/escalation";
+import { INTENT_LABELS } from "@/lib/nlu";
 import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
 
@@ -26,19 +29,6 @@ const EXAMPLES: Record<Language, string[]> = {
   ],
 };
 
-const INTENT_LABELS: Record<string, string> = {
-  greeting: "Greeting",
-  goodbye: "Goodbye",
-  booking_scheduling: "Booking / scheduling",
-  order_status: "Order status",
-  billing: "Billing",
-  password_reset: "Password reset",
-  complaint: "Complaint",
-  question: "Question",
-  request: "General request",
-  unknown: "Unrecognized",
-};
-
 type Turn = { who: "user" | "bot"; text: string; intent?: string; confidence?: number };
 
 export function FaqBotPanel({
@@ -55,6 +45,11 @@ export function FaqBotPanel({
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [speaking, setSpeaking] = useState(false);
   const [voiceEngine, setVoiceEngine] = useState<"elevenlabs" | "browser" | null>(null);
+  const [consecutiveUnknown, setConsecutiveUnknown] = useState(0);
+  const [escalationThreshold, setEscalationThreshold] = useState(2);
+  const [handoff, setHandoff] = useState<{ agentName: string; reason: EscalationReason; contextSummary: string } | null>(
+    null
+  );
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -64,12 +59,40 @@ export function FaqBotPanel({
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
   }, []);
 
+  useEffect(() => {
+    getEscalationThreshold().then(setEscalationThreshold);
+  }, []);
+
   async function ask(text: string) {
-    if (!text.trim()) return;
+    if (!text.trim() || handoff) return;
     setAsking(true);
-    setTurns((prev) => [...prev, { who: "user", text }]);
+    const nextTurns = [...turns, { who: "user" as const, text }];
+    setTurns(nextTurns);
     try {
+      const escalation = checkEscalation(text, language, { consecutiveUnknown, threshold: escalationThreshold });
+      if (escalation.trigger) {
+        const res = await escalateToHuman({
+          sourceBot: "FAQ Answering Bot",
+          reason: escalation.reason,
+          turns: nextTurns,
+          language,
+        });
+        if (res.ok) {
+          setHandoff({ agentName: res.agentName, reason: escalation.reason, contextSummary: res.contextSummary });
+          const msg = handoffMessage(res.agentName, escalation.reason, language);
+          setTurns((prev) => [...prev, { who: "bot", text: msg }]);
+          const played = await playBotResponse(
+            msg,
+            { language, style, voices },
+            { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) }
+          );
+          setVoiceEngine(played.engine);
+        }
+        return;
+      }
+
       const result = await askFaqBot(text, language);
+      setConsecutiveUnknown(result.nlu.intent === "unknown" ? consecutiveUnknown + 1 : 0);
       setTurns((prev) => [
         ...prev,
         { who: "bot", text: result.answerText, intent: result.nlu.intent, confidence: result.nlu.confidence },
@@ -105,46 +128,61 @@ export function FaqBotPanel({
         </div>
       </div>
 
-      <div className="form-group">
-        <label className="form-label">Ask by voice</label>
-        <SpeechRecognizer language={language} onFinalTranscript={ask} />
-      </div>
+      {!handoff && (
+        <>
+          <div className="form-group">
+            <label className="form-label">Ask by voice</label>
+            <SpeechRecognizer language={language} onFinalTranscript={ask} />
+          </div>
 
-      <div className="form-group">
-        <label className="form-label" htmlFor="faq-text">
-          Or type a question
-        </label>
-        <div className="crm-lookup-form">
-          <input
-            id="faq-text"
-            type="text"
-            className="form-input"
-            placeholder="e.g. What are your business hours?"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAskClick();
-              }
-            }}
-          />
-          <button type="button" className="btn btn-primary btn-sm" onClick={handleAskClick} disabled={asking}>
-            {asking ? "Asking…" : "Ask"}
-          </button>
-        </div>
-      </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="faq-text">
+              Or type a question
+            </label>
+            <div className="crm-lookup-form">
+              <input
+                id="faq-text"
+                type="text"
+                className="form-input"
+                placeholder="e.g. What are your business hours?"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAskClick();
+                  }
+                }}
+              />
+              <button type="button" className="btn btn-primary btn-sm" onClick={handleAskClick} disabled={asking}>
+                {asking ? "Asking…" : "Ask"}
+              </button>
+            </div>
+          </div>
 
-      <div className="form-group">
-        <label className="form-label">Or try an example</label>
-        <div className="example-chips">
-          {EXAMPLES[language].map((ex) => (
-            <button type="button" key={ex} className="example-chip" onClick={() => ask(ex)}>
-              {ex}
+          <div className="form-group">
+            <label className="form-label">Or try an example</label>
+            <div className="example-chips">
+              {EXAMPLES[language].map((ex) => (
+                <button type="button" key={ex} className="example-chip" onClick={() => ask(ex)} disabled={asking}>
+                  {ex}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="escalate-row">
+            <button
+              type="button"
+              className="escalate-link"
+              disabled={asking}
+              onClick={() => ask(language === "en-US" ? "I'd like to talk to a human, please." : "Quiero hablar con una persona, por favor.")}
+            >
+              {language === "en-US" ? "Talk to a human instead" : "Hablar con una persona"}
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
 
       {speaking && (
         <p className="stt-listening-label" style={{ marginBottom: 14 }}>
@@ -160,12 +198,21 @@ export function FaqBotPanel({
               <p className="chat-turn-text">{t.text}</p>
               {t.intent && (
                 <span className="chat-turn-meta">
-                  {INTENT_LABELS[t.intent] ?? t.intent} · {Math.round((t.confidence ?? 0) * 100)}% confidence
+                  {(INTENT_LABELS as Record<string, string>)[t.intent] ?? t.intent} · {Math.round((t.confidence ?? 0) * 100)}% confidence
                 </span>
               )}
             </div>
           ))}
         </div>
+      )}
+
+      {handoff && (
+        <HandoffCard
+          agentName={handoff.agentName}
+          reason={handoff.reason}
+          contextSummary={handoff.contextSummary}
+          language={language}
+        />
       )}
     </div>
   );
