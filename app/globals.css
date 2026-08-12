@@ -504,10 +504,11 @@ textarea.form-input{resize:vertical;font-family:inherit;}
 .crm-result{
   margin-top:18px;background:var(--bg-alt);border:1px solid var(--card-border);border-radius:12px;padding:16px 18px;
 }
-.crm-result-name{font-weight:700;font-size:1rem;margin-bottom:10px;}
-.crm-result-row{display:flex;justify-content:space-between;font-size:0.88rem;padding:6px 0;border-top:1px solid var(--card-border);color:var(--text-dim);}
+.crm-result-name{font-weight:700;font-size:1rem;margin-bottom:10px;word-break:break-word;}
+.crm-result-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:0.88rem;padding:6px 0;border-top:1px solid var(--card-border);color:var(--text-dim);}
 .crm-result-row:first-of-type{border-top:none;}
 .crm-result-row span:last-child{color:var(--text);font-weight:600;}
+.crm-result-row .crm-result-name{flex:1 1 auto;min-width:0;word-break:break-word;}
 .crm-tickets{margin-top:12px;padding-top:12px;border-top:1px solid var(--card-border);display:flex;flex-direction:column;gap:6px;}
 .crm-tickets li{font-size:0.84rem;color:var(--text-dim);}
 .crm-ticket-status{
