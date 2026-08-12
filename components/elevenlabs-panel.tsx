@@ -6,7 +6,10 @@ import {
   disconnectElevenLabs,
   cloneVoiceFromSample,
   previewElevenLabsVoice,
+  listStockVoices,
+  selectStockVoice,
 } from "@/app/settings/actions";
+import type { StockVoice } from "@/lib/elevenlabs";
 
 type ConnectionState = {
   status: "disconnected" | "connected" | "error";
@@ -32,6 +35,12 @@ export function ElevenLabsPanel({ initial }: { initial: ConnectionState }) {
   const [previewing, setPreviewing] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const [showStockVoices, setShowStockVoices] = useState(false);
+  const [stockVoices, setStockVoices] = useState<StockVoice[] | null>(null);
+  const [loadingStockVoices, setLoadingStockVoices] = useState(false);
+  const [stockVoicesError, setStockVoicesError] = useState<string | null>(null);
+  const [selectingVoiceId, setSelectingVoiceId] = useState<string | null>(null);
 
   async function handleConnect(e: FormEvent) {
     e.preventDefault();
@@ -74,6 +83,32 @@ export function ElevenLabsPanel({ initial }: { initial: ConnectionState }) {
       setState((s) => ({ ...s, voiceId: res.voiceId, voiceName: res.voiceName }));
     } else {
       setCloneError(res.error);
+    }
+  }
+
+  async function handleBrowseStockVoices() {
+    setShowStockVoices(true);
+    if (stockVoices) return; // already loaded
+    setLoadingStockVoices(true);
+    setStockVoicesError(null);
+    const res = await listStockVoices();
+    setLoadingStockVoices(false);
+    if (res.ok) {
+      setStockVoices(res.voices);
+    } else {
+      setStockVoicesError(res.error);
+    }
+  }
+
+  async function handleSelectStockVoice(voice: StockVoice) {
+    setSelectingVoiceId(voice.voiceId);
+    const res = await selectStockVoice(voice.voiceId, voice.name);
+    setSelectingVoiceId(null);
+    if (res.ok) {
+      setState((s) => ({ ...s, voiceId: res.voiceId, voiceName: res.voiceName }));
+      setShowStockVoices(false);
+    } else {
+      setStockVoicesError(res.error);
     }
   }
 
@@ -128,6 +163,56 @@ export function ElevenLabsPanel({ initial }: { initial: ConnectionState }) {
             <audio ref={audioRef} style={{ display: "none" }} />
           </div>
         ) : null}
+
+        <div style={{ marginBottom: 20 }}>
+          <div className="panel-title" style={{ fontSize: "0.96rem", marginBottom: 4 }}>
+            Or use a stock voice
+          </div>
+          <p className="panel-subtitle" style={{ marginBottom: 14 }}>
+            Cloning your own voice needs an ElevenLabs plan with instant voice cloning enabled.
+            Stock voices work on any plan, including pay-as-you-go.
+          </p>
+
+          {!showStockVoices ? (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={handleBrowseStockVoices}>
+              Browse stock voices
+            </button>
+          ) : (
+            <>
+              {loadingStockVoices && <p className="panel-subtitle">Loading voices…</p>}
+              {stockVoicesError && <p className="auth-error">{stockVoicesError}</p>}
+              {stockVoices && (
+                <div className="crm-result" style={{ maxHeight: 280, overflowY: "auto" }}>
+                  {stockVoices.map((voice) => (
+                    <div
+                      key={voice.voiceId}
+                      className="crm-result-row"
+                      style={{ alignItems: "center", padding: "6px 0" }}
+                    >
+                      <span>
+                        <strong>{voice.name}</strong>
+                        {voice.description ? ` — ${voice.description}` : ""}
+                        {state.voiceId === voice.voiceId ? " (current)" : ""}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={selectingVoiceId === voice.voiceId || state.voiceId === voice.voiceId}
+                        onClick={() => handleSelectStockVoice(voice)}
+                      >
+                        {selectingVoiceId === voice.voiceId
+                          ? "Setting…"
+                          : state.voiceId === voice.voiceId
+                            ? "In use"
+                            : "Use this voice"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
         <form onSubmit={handleClone}>
           <div className="form-group">

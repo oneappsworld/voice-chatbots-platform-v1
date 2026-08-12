@@ -32,6 +32,44 @@ export async function verifyApiKey(apiKey: string): Promise<{ ok: true }> {
   return { ok: true };
 }
 
+export type StockVoice = { voiceId: string; name: string; description: string };
+
+/**
+ * Lists ElevenLabs' built-in premade voices. Usable on any plan (unlike
+ * cloning, which needs a paid tier with instant-voice-cloning enabled).
+ */
+export async function listPremadeVoices(apiKey: string): Promise<StockVoice[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/voices`, {
+      headers: { "xi-api-key": apiKey },
+      cache: "no-store",
+    });
+  } catch {
+    throw new ElevenLabsApiError("Couldn't reach ElevenLabs. Check your network and try again.");
+  }
+
+  if (!res.ok) {
+    throw new ElevenLabsApiError(await parseError(res, `ElevenLabs returned ${res.status}`));
+  }
+
+  const body = await res.json();
+  const voices = (body?.voices ?? []) as {
+    voice_id: string;
+    name: string;
+    category?: string;
+    labels?: { description?: string };
+  }[];
+
+  return voices
+    .filter((v) => v.category === "premade")
+    .map((v) => ({
+      voiceId: v.voice_id,
+      name: v.name,
+      description: v.labels?.description ?? "",
+    }));
+}
+
 /** Clones a voice from a short audio sample. Returns the new voice_id. */
 export async function cloneVoice(
   apiKey: string,

@@ -9,6 +9,7 @@ import {
   cloneVoice,
   deleteVoice,
   textToSpeech,
+  listPremadeVoices,
   ElevenLabsApiError,
 } from "@/lib/elevenlabs";
 
@@ -202,6 +203,66 @@ export async function cloneVoiceFromSample(formData: FormData) {
     revalidatePath("/settings");
     return { ok: false as const, error: message };
   }
+}
+
+/** Lists ElevenLabs' built-in voices — works on any plan, no cloning needed. */
+export async function listStockVoices() {
+  const { supabase, user } = await requireUser();
+
+  const { data: connection } = await supabase
+    .from("elevenlabs_connections")
+    .select("api_key, status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!connection || connection.status !== "connected") {
+    return { ok: false as const, error: "Connect your ElevenLabs API key first." };
+  }
+
+  try {
+    const voices = await listPremadeVoices(connection.api_key);
+    return { ok: true as const, voices };
+  } catch (err) {
+    const message = err instanceof ElevenLabsApiError ? err.message : "Couldn't load voices.";
+    return { ok: false as const, error: message };
+  }
+}
+
+/** Picks one of ElevenLabs' stock voices instead of cloning your own. */
+export async function selectStockVoice(voiceId: string, voiceName: string) {
+  const { supabase, user } = await requireUser();
+
+  const { data: connection } = await supabase
+    .from("elevenlabs_connections")
+    .select("status, voice_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!connection || connection.status !== "connected") {
+    return { ok: false as const, error: "Connect your ElevenLabs API key first." };
+  }
+
+  // If a previously cloned voice is being swapped out, delete it from the
+  // ElevenLabs account rather than leaving it orphaned (cloned voices count
+  // against the account's voice slot limit).
+  if (connection.voice_id) {
+    const { data: full } = await supabase
+      .from("elevenlabs_connections")
+      .select("api_key")
+      .eq("user_id", user.id)
+      .single();
+    if (full) {
+      await deleteVoice(full.api_key, connection.voice_id).catch(() => {});
+    }
+  }
+
+  await supabase
+    .from("elevenlabs_connections")
+    .update({ voice_id: voiceId, voice_name: voiceName, last_error: null })
+    .eq("user_id", user.id);
+
+  revalidatePath("/settings");
+  return { ok: true as const, voiceId, voiceName };
 }
 
 export async function previewElevenLabsVoice(text: string) {
