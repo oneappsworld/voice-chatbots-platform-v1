@@ -188,11 +188,14 @@ export async function listSampleOrderIds() {
 
 export async function getAvailableSlots(language: Language): Promise<Slot[]> {
   const { supabase, user } = await requireUser();
+  // generateSlots only ever looks ~21 days ahead — a booking from months
+  // ago is irrelevant to next week's availability and shouldn't be fetched.
   const { data } = await supabase
     .from("appointments")
     .select("scheduled_at")
     .eq("user_id", user.id)
-    .eq("status", "booked");
+    .eq("status", "booked")
+    .gte("scheduled_at", new Date().toISOString());
 
   const bookedIso = (data ?? []).map((a) => new Date(a.scheduled_at).toISOString());
   return generateSlots(bookedIso, language);
