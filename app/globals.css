@@ -494,6 +494,13 @@ textarea.form-input{resize:vertical;font-family:inherit;}
 
 .crm-lookup-form{display:flex;gap:10px;}
 .crm-lookup-form .form-input{flex:1;}
+
+@media (max-width: 640px){
+  .crm-lookup-form{flex-wrap:wrap;}
+  .crm-lookup-form .form-input{flex:1 1 100%;min-width:0;}
+  .crm-lookup-form select,
+  .crm-lookup-form button{flex:1 1 auto;}
+}
 .crm-result{
   margin-top:18px;background:var(--bg-alt);border:1px solid var(--card-border);border-radius:12px;padding:16px 18px;
 }
