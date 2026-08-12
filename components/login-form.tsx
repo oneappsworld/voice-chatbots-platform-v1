@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleAuthButton } from "@/components/google-auth-button";
+import { PasswordInput } from "@/components/password-input";
 
 export function LoginForm() {
   const router = useRouter();
@@ -66,14 +67,7 @@ export function LoginForm() {
               Forgot password?
             </Link>
           </div>
-          <input
-            id="password"
-            type="password"
-            className="form-input"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <PasswordInput id="password" value={password} onChange={setPassword} autoComplete="current-password" required />
         </div>
         <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
           {loading ? "Logging in…" : "Log In"}

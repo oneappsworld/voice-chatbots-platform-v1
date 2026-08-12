@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordInput } from "@/components/password-input";
 
 export function UpdatePasswordForm() {
   const router = useRouter();
@@ -36,15 +37,7 @@ export function UpdatePasswordForm() {
           <label className="form-label" htmlFor="password">
             New password
           </label>
-          <input
-            id="password"
-            type="password"
-            className="form-input"
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <PasswordInput id="password" value={password} onChange={setPassword} autoComplete="new-password" minLength={6} required />
         </div>
         <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
           {loading ? "Updating…" : "Update Password"}

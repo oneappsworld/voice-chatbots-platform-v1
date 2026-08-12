@@ -323,6 +323,22 @@ footer{border-top:1px solid var(--card-border);padding:56px 0 32px;}
   color:var(--text);font-size:0.95rem;transition:border-color .15s;
 }
 .form-input:focus{outline:none;border-color:var(--accent);}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+.password-field{position:relative;}
+.password-field .form-input{padding-right:44px;}
+.password-toggle{
+  position:absolute;top:50%;right:6px;transform:translateY(-50%);
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;padding:0;border:none;border-radius:8px;
+  background:none;color:var(--text-faint);cursor:pointer;transition:color .15s,background-color .15s;
+}
+.password-toggle:hover{color:var(--text);background:rgba(255,255,255,0.06);}
+.password-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
 .form-row-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .form-link{color:var(--accent-2);font-size:0.85rem;font-weight:600;}
 .form-link:hover{text-decoration:underline;}
