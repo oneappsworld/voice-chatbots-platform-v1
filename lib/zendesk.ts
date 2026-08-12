@@ -3,8 +3,7 @@
 
 export type ZendeskCredentials = {
   subdomain: string;
-  agentEmail: string;
-  apiToken: string;
+  accessToken: string;
 };
 
 export class ZendeskApiError extends Error {}
@@ -14,9 +13,8 @@ function baseUrl(subdomain: string) {
   return `https://${clean}.zendesk.com/api/v2`;
 }
 
-function authHeader({ agentEmail, apiToken }: ZendeskCredentials) {
-  const token = Buffer.from(`${agentEmail}/token:${apiToken}`).toString("base64");
-  return `Basic ${token}`;
+function authHeader({ accessToken }: ZendeskCredentials) {
+  return `Bearer ${accessToken}`;
 }
 
 async function zendeskFetch(creds: ZendeskCredentials, path: string) {

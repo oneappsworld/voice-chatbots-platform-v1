@@ -324,8 +324,8 @@ max_frequency = "5s"
 # Google Cloud OAuth Client ID/Secret is supplied. Authorized redirect URI to register in Google
 # Cloud Console: https://xpzikkruirnwcumidair.supabase.co/auth/v1/callback
 [auth.external.google]
-enabled = false
-client_id = ""
+enabled = true
+client_id = "383307544122-30ggq5pgcamo5upgplaj28t66g69glbh.apps.googleusercontent.com"
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
 redirect_uri = ""
 url = ""

@@ -1,56 +1,37 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { connectZendesk, disconnectZendesk, lookupCustomer } from "@/app/settings/actions";
+import { disconnectZendesk, lookupCustomer } from "@/app/settings/actions";
 import type { ZendeskCustomerLookup } from "@/lib/zendesk";
 
 type ConnectionState = {
   status: "disconnected" | "connected" | "error";
   subdomain: string | null;
-  agentEmail: string | null;
   connectedAgentName: string | null;
   lastError: string | null;
 };
 
-export function CrmConnectionPanel({ initial }: { initial: ConnectionState }) {
+export function CrmConnectionPanel({
+  initial,
+  callbackError,
+  justConnected,
+}: {
+  initial: ConnectionState;
+  callbackError: string | null;
+  justConnected: boolean;
+}) {
   const [state, setState] = useState(initial);
   const [subdomain, setSubdomain] = useState(initial.subdomain ?? "");
-  const [agentEmail, setAgentEmail] = useState(initial.agentEmail ?? "");
-  const [apiToken, setApiToken] = useState("");
-  const [connecting, setConnecting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
 
   const [lookupEmail, setLookupEmail] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupResult, setLookupResult] = useState<ZendeskCustomerLookup | null>(null);
 
-  async function handleConnect(e: FormEvent) {
-    e.preventDefault();
-    setConnecting(true);
-    setFormError(null);
-    const res = await connectZendesk({ subdomain, agentEmail, apiToken });
-    setConnecting(false);
-    if (res.ok) {
-      setState({
-        status: "connected",
-        subdomain,
-        agentEmail,
-        connectedAgentName: res.agentName,
-        lastError: null,
-      });
-      setApiToken("");
-    } else {
-      setFormError(res.error);
-      setState((s) => ({ ...s, status: "error", lastError: res.error }));
-    }
-  }
-
   async function handleDisconnect() {
     await disconnectZendesk();
-    setState({ status: "disconnected", subdomain: null, agentEmail: null, connectedAgentName: null, lastError: null });
+    setState({ status: "disconnected", subdomain: null, connectedAgentName: null, lastError: null });
     setSubdomain("");
-    setAgentEmail("");
     setLookupResult(null);
   }
 
@@ -71,6 +52,11 @@ export function CrmConnectionPanel({ initial }: { initial: ConnectionState }) {
   if (state.status === "connected") {
     return (
       <div>
+        {justConnected && (
+          <p className="crm-status crm-status-connected" style={{ marginBottom: 14 }}>
+            Zendesk connected successfully.
+          </p>
+        )}
         <div className="crm-status crm-status-connected">
           <span className="crm-status-dot" />
           Connected as <strong>{state.connectedAgentName}</strong> on{" "}
@@ -149,13 +135,16 @@ export function CrmConnectionPanel({ initial }: { initial: ConnectionState }) {
       {state.status === "error" && (
         <p className="auth-error">Last attempt failed: {state.lastError}</p>
       )}
-      <form onSubmit={handleConnect}>
+      {callbackError && <p className="auth-error">{callbackError}</p>}
+
+      <form action="/api/zendesk/oauth/start" method="GET">
         <div className="form-group">
           <label className="form-label" htmlFor="subdomain">
             Zendesk subdomain
           </label>
           <input
             id="subdomain"
+            name="subdomain"
             type="text"
             className="form-input"
             placeholder="yourcompany"
@@ -163,41 +152,12 @@ export function CrmConnectionPanel({ initial }: { initial: ConnectionState }) {
             onChange={(e) => setSubdomain(e.target.value)}
             required
           />
-        </div>
-        <div className="form-group">
-          <label className="form-label" htmlFor="agentEmail">
-            Agent email
-          </label>
-          <input
-            id="agentEmail"
-            type="email"
-            className="form-input"
-            placeholder="agent@yourcompany.com"
-            value={agentEmail}
-            onChange={(e) => setAgentEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label className="form-label" htmlFor="apiToken">
-            API token
-          </label>
-          <input
-            id="apiToken"
-            type="password"
-            className="form-input"
-            value={apiToken}
-            onChange={(e) => setApiToken(e.target.value)}
-            required
-          />
           <p className="form-hint">
-            Zendesk Admin Center → Apps and integrations → APIs → Zendesk API → enable token
-            access, then generate a new token.
+            The part before .zendesk.com in your Zendesk URL — e.g. yourcompany.zendesk.com.
           </p>
         </div>
-        {formError && <p className="auth-error">{formError}</p>}
-        <button type="submit" className="btn btn-primary" disabled={connecting}>
-          {connecting ? "Connecting…" : "Connect Zendesk"}
+        <button type="submit" className="btn btn-primary">
+          Connect with Zendesk
         </button>
       </form>
     </div>

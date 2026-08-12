@@ -2,12 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import {
-  testZendeskConnection,
-  lookupZendeskCustomer,
-  ZendeskApiError,
-  type ZendeskCredentials,
-} from "@/lib/zendesk";
+import { lookupZendeskCustomer, ZendeskApiError } from "@/lib/zendesk";
+import { refreshAccessToken, ZendeskOAuthError } from "@/lib/zendesk-oauth";
 import {
   verifyApiKey,
   cloneVoice,
@@ -25,59 +21,6 @@ async function requireUser() {
   return { supabase, user };
 }
 
-export async function connectZendesk(input: {
-  subdomain: string;
-  agentEmail: string;
-  apiToken: string;
-}) {
-  const { supabase, user } = await requireUser();
-  const creds: ZendeskCredentials = {
-    subdomain: input.subdomain.trim(),
-    agentEmail: input.agentEmail.trim(),
-    apiToken: input.apiToken.trim(),
-  };
-
-  try {
-    const { agentName } = await testZendeskConnection(creds);
-
-    await supabase.from("crm_connections").upsert(
-      {
-        user_id: user.id,
-        provider: "zendesk",
-        subdomain: creds.subdomain,
-        agent_email: creds.agentEmail,
-        api_token: creds.apiToken,
-        status: "connected",
-        connected_agent_name: agentName,
-        last_verified_at: new Date().toISOString(),
-        last_error: null,
-      },
-      { onConflict: "user_id" }
-    );
-
-    revalidatePath("/settings");
-    return { ok: true as const, agentName };
-  } catch (err) {
-    const message = err instanceof ZendeskApiError ? err.message : "Connection failed.";
-
-    await supabase.from("crm_connections").upsert(
-      {
-        user_id: user.id,
-        provider: "zendesk",
-        subdomain: creds.subdomain,
-        agent_email: creds.agentEmail,
-        api_token: creds.apiToken,
-        status: "error",
-        last_error: message,
-      },
-      { onConflict: "user_id" }
-    );
-
-    revalidatePath("/settings");
-    return { ok: false as const, error: message };
-  }
-}
-
 export async function disconnectZendesk() {
   const { supabase, user } = await requireUser();
   await supabase.from("crm_connections").delete().eq("user_id", user.id);
@@ -90,21 +33,47 @@ export async function lookupCustomer(email: string) {
 
   const { data: connection } = await supabase
     .from("crm_connections")
-    .select("subdomain, agent_email, api_token, status")
+    .select("subdomain, access_token, refresh_token, token_expires_at, status")
     .eq("user_id", user.id)
     .single();
 
-  if (!connection || connection.status !== "connected") {
+  if (!connection || connection.status !== "connected" || !connection.access_token) {
     return { ok: false as const, error: "Connect Zendesk before running a lookup." };
+  }
+
+  let accessToken = connection.access_token;
+
+  // Refresh ahead of expiry (60s buffer) rather than waiting for a 401 —
+  // Zendesk access tokens are short-lived, this keeps lookups from failing
+  // mid-call.
+  const expiresAt = connection.token_expires_at ? new Date(connection.token_expires_at) : null;
+  const needsRefresh = expiresAt && expiresAt.getTime() - Date.now() < 60_000;
+
+  if (needsRefresh && connection.refresh_token) {
+    try {
+      const tokens = await refreshAccessToken(connection.subdomain, connection.refresh_token);
+      accessToken = tokens.accessToken;
+      await supabase
+        .from("crm_connections")
+        .update({
+          access_token: tokens.accessToken,
+          refresh_token: tokens.refreshToken ?? connection.refresh_token,
+          token_expires_at: tokens.expiresAt,
+        })
+        .eq("user_id", user.id);
+    } catch (err) {
+      const message = err instanceof ZendeskOAuthError ? err.message : "Token refresh failed.";
+      await supabase
+        .from("crm_connections")
+        .update({ status: "error", last_error: message })
+        .eq("user_id", user.id);
+      return { ok: false as const, error: `${message} Please reconnect Zendesk.` };
+    }
   }
 
   try {
     const result = await lookupZendeskCustomer(
-      {
-        subdomain: connection.subdomain,
-        agentEmail: connection.agent_email,
-        apiToken: connection.api_token,
-      },
+      { subdomain: connection.subdomain, accessToken },
       email.trim()
     );
     return { ok: true as const, result };

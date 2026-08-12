@@ -10,7 +10,11 @@ export const metadata: Metadata = {
   title: "Settings — Voice Chatbots Platform",
 };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ zendesk_error?: string; zendesk?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,10 +24,12 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
+  const params = await searchParams;
+
   const [{ data: connection }, { data: voiceSettings }, { data: elevenlabs }] = await Promise.all([
     supabase
       .from("crm_connections")
-      .select("status, subdomain, agent_email, connected_agent_name, last_error")
+      .select("status, subdomain, connected_agent_name, last_error")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -64,10 +70,11 @@ export default async function SettingsPage() {
                 initial={{
                   status: (connection?.status as "connected" | "disconnected" | "error") ?? "disconnected",
                   subdomain: connection?.subdomain ?? null,
-                  agentEmail: connection?.agent_email ?? null,
                   connectedAgentName: connection?.connected_agent_name ?? null,
                   lastError: connection?.last_error ?? null,
                 }}
+                callbackError={params.zendesk_error ?? null}
+                justConnected={params.zendesk === "connected"}
               />
             </section>
 
