@@ -347,10 +347,10 @@ export default function Home() {
               </h2>
               <p>
                 Developer-first platforms make you build the agent. Enterprise
-                platforms make you pay for capacity you&apos;ll never use. Voice
-                Chatbots Platform starts with a pre-trained template for your
-                exact use case and lets you configure it in plain English — so
-                you get power without the overhead.
+                platforms make you pay for capacity you&apos;ll never use.
+                ChatSyn starts with a pre-trained template for your exact use
+                case and lets you configure it in plain English — so you get
+                power without the overhead.
               </p>
             </div>
           </div>
