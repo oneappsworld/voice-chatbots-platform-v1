@@ -7,7 +7,7 @@ import { VoiceSettingsPanel } from "@/components/voice-settings-panel";
 import { ElevenLabsPanel } from "@/components/elevenlabs-panel";
 
 export const metadata: Metadata = {
-  title: "Settings — Voice Chatbots Platform",
+  title: "Settings — ChatSyn",
 };
 
 export default async function SettingsPage({

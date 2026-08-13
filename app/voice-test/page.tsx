@@ -5,7 +5,7 @@ import { AppHeader } from "@/components/app-header";
 import { VoiceTestConsole } from "@/components/voice-test-console";
 
 export const metadata: Metadata = {
-  title: "Voice Test Console — Voice Chatbots Platform",
+  title: "Voice Test Console — ChatSyn",
 };
 
 export default async function VoiceTestPage() {

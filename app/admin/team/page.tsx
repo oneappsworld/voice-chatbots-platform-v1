@@ -7,7 +7,7 @@ import { listMembers } from "@/app/admin/actions";
 import { getOrgContext } from "@/lib/org-context";
 
 export const metadata: Metadata = {
-  title: "Admin Team — Voice Chatbots Platform",
+  title: "Admin Team — ChatSyn",
 };
 
 export default async function AdminTeamPage() {

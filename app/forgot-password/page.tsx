@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ForgotPasswordForm } from "@/components/forgot-password-form";
 
 export const metadata: Metadata = {
-  title: "Reset Password — Voice Chatbots Platform",
+  title: "Reset Password — ChatSyn",
 };
 
 export default function ForgotPasswordPage() {
@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
               />
             </svg>
           </span>
-          Voice Chatbots Platform
+          ChatSyn
         </div>
         <h1 className="auth-title">Forgot your password?</h1>
         <p className="auth-subtitle">

@@ -28,7 +28,7 @@ export async function SiteHeader() {
               />
             </svg>
           </span>
-          Voice Chatbots Platform
+          ChatSyn
         </Link>
         <div className="nav-links">
           <Link href="/#features">Features</Link>

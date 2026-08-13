@@ -10,7 +10,7 @@ import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
 
 export const metadata: Metadata = {
-  title: "Bots — Voice Chatbots Platform",
+  title: "Bots — ChatSyn",
 };
 
 export default async function BotsPage() {

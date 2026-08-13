@@ -9,12 +9,12 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const title = "Voice Chatbots Platform — Easy-to-Deploy, ROI-Driven Voice AI";
+const title = "ChatSyn — Easy-to-Deploy, ROI-Driven Voice AI";
 const description =
   "Pre-trained, no-code voice AI agents for sales, support, and internal ops — live in days, not months. Deploy free for 14 days.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://voice-chatbots-platform-v1.vercel.app"),
+  metadataBase: new URL("https://chatsyn.io"),
   title,
   description,
   openGraph: {

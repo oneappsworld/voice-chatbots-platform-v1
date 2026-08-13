@@ -21,7 +21,7 @@ export default function Home() {
               <span className="grad">calling your competitor instead.</span>
             </h1>
             <p className="hero-sub">
-              Voice Chatbots Platform gives your sales, support, and operations lines a
+              ChatSyn gives your sales, support, and operations lines a
               pre-trained AI voice agent that picks up every call, qualifies it, and
               resolves it — 24/7, in your industry&apos;s language, with no developers and
               no six-month rollout.
@@ -103,7 +103,7 @@ export default function Home() {
                 <div className="stat-num">$146K</div>
                 <div className="stat-label">
                   average annual savings reported by mid-market customers who
-                  replaced overflow call staffing with Voice Chatbots Platform.
+                  replaced overflow call staffing with ChatSyn.
                 </div>
               </div>
             </div>
@@ -560,7 +560,7 @@ export default function Home() {
                     />
                   </svg>
                 </span>
-                Voice Chatbots Platform
+                ChatSyn
               </div>
               <p>
                 Easy-to-deploy, ROI-driven voice AI for sales, support, and
@@ -585,7 +585,7 @@ export default function Home() {
             </div>
           </div>
           <div className="footer-bottom">
-            <span>© 2026 Voice Chatbots Platform. All rights reserved.</span>
+            <span>© 2026 ChatSyn. All rights reserved.</span>
             <span>Made for teams tired of missed calls.</span>
           </div>
         </div>

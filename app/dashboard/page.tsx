@@ -9,7 +9,7 @@ import { TopicsList } from "@/components/topics-list";
 import { computeDashboardMetrics, formatDuration, type CallRow } from "@/lib/dashboard";
 
 export const metadata: Metadata = {
-  title: "Dashboard — Voice Chatbots Platform",
+  title: "Dashboard — ChatSyn",
 };
 
 const RANGE_OPTIONS = [7, 14, 30] as const;

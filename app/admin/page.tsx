@@ -11,7 +11,7 @@ import { getOrgContext } from "@/lib/org-context";
 import { formatDuration } from "@/lib/dashboard";
 
 export const metadata: Metadata = {
-  title: "Admin Overview — Voice Chatbots Platform",
+  title: "Admin Overview — ChatSyn",
 };
 
 const RANGE_OPTIONS = [7, 14, 30] as const;

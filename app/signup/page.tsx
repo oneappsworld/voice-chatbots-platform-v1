@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { SignupForm } from "@/components/signup-form";
 
 export const metadata: Metadata = {
-  title: "Sign Up — Voice Chatbots Platform",
+  title: "Sign Up — ChatSyn",
 };
 
 export default function SignupPage() {
@@ -31,7 +31,7 @@ export default function SignupPage() {
               />
             </svg>
           </span>
-          Voice Chatbots Platform
+          ChatSyn
         </div>
         <h1 className="auth-title">Create your account</h1>
         <p className="auth-subtitle">

@@ -7,7 +7,7 @@ import { getOrgSettings } from "@/app/admin/actions";
 import { getOrgContext } from "@/lib/org-context";
 
 export const metadata: Metadata = {
-  title: "Admin Settings — Voice Chatbots Platform",
+  title: "Admin Settings — ChatSyn",
 };
 
 export default async function AdminSettingsPage() {

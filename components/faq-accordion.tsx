@@ -5,7 +5,7 @@ import { useState } from "react";
 const FAQS = [
   {
     q: "Why not just build this on Google Dialogflow or Amazon Lex?",
-    a: "You can — if you have a developer team and a few months to spend. Dialogflow and Lex are toolkits, not finished products: you're building the conversation flows, the NLU tuning, and the integrations yourself from scratch. Voice Chatbots Platform starts where those tools finish — pre-trained templates for your specific industry and use case, configured through a no-code interface, live in days.",
+    a: "You can — if you have a developer team and a few months to spend. Dialogflow and Lex are toolkits, not finished products: you're building the conversation flows, the NLU tuning, and the integrations yourself from scratch. ChatSyn starts where those tools finish — pre-trained templates for your specific industry and use case, configured through a no-code interface, live in days.",
   },
   {
     q: "We tried a voice bot before and it couldn't understand our customers. What's different here?",
@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: "Why would we choose you over an enterprise platform like LivePerson?",
-    a: "Enterprise platforms are built and priced for organizations with dedicated implementation budgets and multi-month rollout timelines. We built Voice Chatbots Platform specifically for the businesses that gap leaves behind: flat, transparent pricing, no six-figure contract, and a self-serve deployment that a business owner or ops manager can run without a vendor implementation team.",
+    a: "Enterprise platforms are built and priced for organizations with dedicated implementation budgets and multi-month rollout timelines. We built ChatSyn specifically for the businesses that gap leaves behind: flat, transparent pricing, no six-figure contract, and a self-serve deployment that a business owner or ops manager can run without a vendor implementation team.",
   },
   {
     q: "What happens after the 14-day trial if it's not the right fit?",

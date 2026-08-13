@@ -8,7 +8,7 @@ import { getOrgContext } from "@/lib/org-context";
 import { DEFAULT_ANSWERS } from "@/lib/faq";
 
 export const metadata: Metadata = {
-  title: "Admin Content — Voice Chatbots Platform",
+  title: "Admin Content — ChatSyn",
 };
 
 export default async function AdminContentPage() {

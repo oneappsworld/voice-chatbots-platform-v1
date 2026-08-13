@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { LoginForm } from "@/components/login-form";
 
 export const metadata: Metadata = {
-  title: "Log In — Voice Chatbots Platform",
+  title: "Log In — ChatSyn",
 };
 
 export default function LoginPage() {
@@ -32,7 +32,7 @@ export default function LoginPage() {
               />
             </svg>
           </span>
-          Voice Chatbots Platform
+          ChatSyn
         </div>
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-subtitle">Log in to manage your voice agents.</p>

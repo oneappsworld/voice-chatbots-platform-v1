@@ -29,7 +29,7 @@ export async function AppHeader({
               />
             </svg>
           </span>
-          Voice Chatbots Platform
+          ChatSyn
         </Link>
         <nav className="app-nav">
           <Link href="/dashboard" className={active === "dashboard" ? "active" : ""}>

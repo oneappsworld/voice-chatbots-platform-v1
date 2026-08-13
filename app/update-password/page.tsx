@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { UpdatePasswordForm } from "@/components/update-password-form";
 
 export const metadata: Metadata = {
-  title: "Set New Password — Voice Chatbots Platform",
+  title: "Set New Password — ChatSyn",
 };
 
 export default function UpdatePasswordPage() {
@@ -27,7 +27,7 @@ export default function UpdatePasswordPage() {
               />
             </svg>
           </span>
-          Voice Chatbots Platform
+          ChatSyn
         </div>
         <h1 className="auth-title">Set a new password</h1>
         <p className="auth-subtitle">Choose a new password for your account.</p>
