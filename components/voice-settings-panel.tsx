@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { saveVoiceSettings } from "@/app/settings/actions";
 import { VOICE_STYLES, pickVoice, speakText, type VoiceStyle } from "@/lib/tts";
 import type { Language } from "@/lib/nlu";
@@ -24,6 +24,7 @@ type Initial = {
 
 export function VoiceSettingsPanel({ initial }: { initial: Initial }) {
   const [personaName, setPersonaName] = useState(initial.personaName);
+  const personaNameRef = useRef<HTMLInputElement>(null);
   const [greeting, setGreeting] = useState(initial.greeting);
   const [language, setLanguage] = useState<Language>(initial.language);
   const [style, setStyle] = useState<Style>(initial.style);
@@ -66,6 +67,10 @@ export function VoiceSettingsPanel({ initial }: { initial: Initial }) {
   }
 
   async function handleSave() {
+    if (!personaName.trim()) {
+      personaNameRef.current?.reportValidity();
+      return;
+    }
     setSaving(true);
     setSaved(false);
     await saveVoiceSettings({ personaName, greeting, language, style });
@@ -82,10 +87,12 @@ export function VoiceSettingsPanel({ initial }: { initial: Initial }) {
         </label>
         <input
           id="personaName"
+          ref={personaNameRef}
           type="text"
           className="form-input"
           value={personaName}
           onChange={(e) => setPersonaName(e.target.value)}
+          required
         />
       </div>
 
