@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { AnalyticsScripts } from "@/components/analytics-scripts";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -36,7 +37,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth" className={jakarta.variable}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <AnalyticsScripts />
+      </body>
     </html>
   );
 }

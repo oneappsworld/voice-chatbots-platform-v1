@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { AppHeader } from "@/components/app-header";
 import { BillingPanel } from "@/components/billing-panel";
+import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { getOrgContext } from "@/lib/org-context";
 import { PLAN_LIMITS } from "@/lib/plan-limits";
 import { createClient } from "@/lib/supabase/server";
@@ -44,6 +45,7 @@ export default async function BillingPage({
 
   return (
     <div className="dash-shell">
+      <CheckoutSuccessTracker plan={org.plan} />
       <AppHeader active="billing" />
 
       <main className="dash-main">

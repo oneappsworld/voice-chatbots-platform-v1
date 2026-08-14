@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/app-header";
 import { TrendChart } from "@/components/trend-chart";
 import { OutcomeBreakdown } from "@/components/outcome-breakdown";
 import { TopicsList } from "@/components/topics-list";
+import { SignUpTracker } from "@/components/signup-tracker";
 import { computeDashboardMetrics, formatDuration, type CallRow } from "@/lib/dashboard";
 
 export const metadata: Metadata = {
@@ -56,6 +57,7 @@ export default async function DashboardPage({
 
   return (
     <div className="dash-shell">
+      <SignUpTracker method="google" />
       <AppHeader active="dashboard" />
 
       <main className="dash-main">

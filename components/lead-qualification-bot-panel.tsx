@@ -19,6 +19,7 @@ import { SessionBlockedBanner } from "@/components/session-blocked-banner";
 import { playBotResponse } from "@/lib/play-bot-response";
 import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
+import { trackFeatureUsage } from "@/lib/analytics";
 
 type Turn = { who: "user" | "bot"; text: string };
 
@@ -77,6 +78,7 @@ export function LeadQualificationBotPanel({
       setSessionBlocked(session.reason);
       return;
     }
+    trackFeatureUsage("lead_qualification");
     const greeting = leadPrompt("name", lang);
     setTurns([{ who: "bot", text: greeting }]);
     speak(greeting);
@@ -92,6 +94,7 @@ export function LeadQualificationBotPanel({
         setSessionBlocked(session.reason);
         return;
       }
+      trackFeatureUsage("lead_qualification");
       await speak(leadPrompt("name", initialLanguage));
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

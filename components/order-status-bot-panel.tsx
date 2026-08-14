@@ -15,6 +15,7 @@ import { playBotResponse } from "@/lib/play-bot-response";
 import { checkEscalation, handoffMessage, type EscalationReason } from "@/lib/escalation";
 import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
+import { trackFeatureUsage } from "@/lib/analytics";
 
 type Turn = { who: "user" | "bot"; text: string; found?: boolean };
 
@@ -81,6 +82,7 @@ export function OrderStatusBotPanel({
         setSessionBlocked(session.reason);
         return;
       }
+      trackFeatureUsage("order_status");
     }
     setChecking(true);
     const nextTurns = [...turns, { who: "user" as const, text }];

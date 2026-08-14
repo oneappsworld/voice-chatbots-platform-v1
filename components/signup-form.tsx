@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleAuthButton } from "@/components/google-auth-button";
 import { PasswordInput } from "@/components/password-input";
+import { trackSignUp } from "@/lib/analytics";
 import type { Plan } from "@/lib/plan-limits";
 
 export function SignupForm() {
@@ -39,12 +40,14 @@ export function SignupForm() {
     }
 
     if (data.session) {
+      trackSignUp("email");
       router.push("/dashboard");
       router.refresh();
       return;
     }
 
     // No session back means email confirmation is required after all.
+    trackSignUp("email");
     setError(null);
     setLoading(false);
     router.push("/login?confirmEmail=1");

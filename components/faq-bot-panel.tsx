@@ -10,6 +10,7 @@ import { checkEscalation, handoffMessage, type EscalationReason } from "@/lib/es
 import { INTENT_LABELS } from "@/lib/nlu";
 import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
+import { trackFeatureUsage } from "@/lib/analytics";
 
 const EXAMPLES: Record<Language, string[]> = {
   "en-US": [
@@ -81,6 +82,7 @@ export function FaqBotPanel({
         setSessionBlocked(session.reason);
         return;
       }
+      trackFeatureUsage("faq");
     }
     setAsking(true);
     const nextTurns = [...turns, { who: "user" as const, text }];
