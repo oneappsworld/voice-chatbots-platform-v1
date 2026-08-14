@@ -71,7 +71,9 @@ export function CrmConnectionPanel({
             Try a live lookup
           </div>
           <p className="panel-subtitle" style={{ marginBottom: 14 }}>
-            This is the same lookup your voice agent runs mid-call to pull customer context.
+            Manual test only — bots don&apos;t call this during a conversation. For caller history
+            your bots actually use, see{" "}
+            <a href="/admin/customers">Admin → Customers</a>.
           </p>
           <form onSubmit={handleLookup} className="crm-lookup-form">
             <input

@@ -273,3 +273,92 @@ export async function getOrgAnalytics(rangeDays: number): Promise<{ ok: true; an
     },
   };
 }
+
+// ---------- Customers (native in-house lookup, replaces the disconnected Zendesk test panel) ----------
+
+export type CustomerRow = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  first_seen_at: string;
+  last_seen_at: string;
+};
+
+export async function listCustomers(
+  search?: string
+): Promise<{ ok: true; customers: CustomerRow[] } | { ok: false; error: string }> {
+  const { supabase, organizationId } = await requireOrgAdmin();
+  let query = supabase
+    .from("customers")
+    .select("id, name, email, phone, first_seen_at, last_seen_at")
+    .eq("organization_id", organizationId)
+    .order("last_seen_at", { ascending: false })
+    .limit(100);
+
+  const trimmed = search?.trim();
+  if (trimmed) {
+    const pattern = `%${trimmed}%`;
+    query = query.or(`name.ilike.${pattern},email.ilike.${pattern},phone.ilike.${pattern}`);
+  }
+
+  const { data, error } = await query;
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, customers: data as CustomerRow[] };
+}
+
+export type CustomerHistory = {
+  customer: CustomerRow;
+  leads: { id: string; company: string | null; qualification: string; score: number; created_at: string }[];
+  appointments: { id: string; service: string; scheduled_at: string; status: string }[];
+};
+
+export async function getCustomerHistory(
+  customerId: string
+): Promise<{ ok: true; history: CustomerHistory } | { ok: false; error: string }> {
+  const { supabase, organizationId } = await requireOrgAdmin();
+
+  const { data: customer, error: customerError } = await supabase
+    .from("customers")
+    .select("id, name, email, phone, first_seen_at, last_seen_at")
+    .eq("organization_id", organizationId)
+    .eq("id", customerId)
+    .maybeSingle();
+  if (customerError) return { ok: false, error: customerError.message };
+  if (!customer) return { ok: false, error: "Customer not found." };
+
+  const orFilters = (column: "email" | "contact") => {
+    const clauses: string[] = [];
+    if (customer.email) clauses.push(`${column}.eq.${customer.email}`);
+    if (customer.phone && column === "contact") clauses.push(`${column}.eq.${customer.phone}`);
+    return clauses;
+  };
+
+  const [{ data: leads }, { data: appointments }] = await Promise.all([
+    customer.email
+      ? supabase
+          .from("leads")
+          .select("id, company, qualification, score, created_at")
+          .eq("email", customer.email)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as CustomerHistory["leads"] }),
+    (() => {
+      const clauses = orFilters("contact");
+      if (clauses.length === 0) return Promise.resolve({ data: [] as CustomerHistory["appointments"] });
+      return supabase
+        .from("appointments")
+        .select("id, service, scheduled_at, status")
+        .or(clauses.join(","))
+        .order("scheduled_at", { ascending: false });
+    })(),
+  ]);
+
+  return {
+    ok: true,
+    history: {
+      customer: customer as CustomerRow,
+      leads: (leads ?? []) as CustomerHistory["leads"],
+      appointments: (appointments ?? []) as CustomerHistory["appointments"],
+    },
+  };
+}

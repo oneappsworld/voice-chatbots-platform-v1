@@ -17,6 +17,7 @@ import {
 import type { Language } from "@/lib/nlu";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PLAN_LIMITS, planIncludesBot, type BotType, type Plan } from "@/lib/plan-limits";
+import { classifyContact, upsertCustomer } from "@/lib/customers";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -256,6 +257,13 @@ export async function bookAppointment(payload: {
     // Most likely someone else grabbed the same slot between fetch and booking.
     return { ok: false as const, error: error.message };
   }
+
+  const organizationId = await getOrganizationId(supabase, user.id);
+  if (organizationId) {
+    const { email, phone } = classifyContact(payload.contact);
+    await upsertCustomer(supabase, organizationId, { email, phone, name: payload.customerName });
+  }
+
   return { ok: true as const };
 }
 
@@ -282,6 +290,15 @@ export async function saveLead(payload: {
   });
 
   if (error) return { ok: false as const, error: error.message };
+
+  const organizationId = await getOrganizationId(supabase, user.id);
+  if (organizationId && payload.answers.email) {
+    await upsertCustomer(supabase, organizationId, {
+      email: payload.answers.email,
+      name: payload.answers.name ?? null,
+    });
+  }
+
   return { ok: true as const };
 }
 
