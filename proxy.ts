@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/settings", "/voice-test", "/bots", "/admin"];
+const AUTH_ONLY_PREFIXES = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -39,6 +40,17 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectTo", request.nextUrl.pathname);
+    return NextResponse.redirect(url);
+  }
+
+  const isAuthOnly = AUTH_ONLY_PREFIXES.some((prefix) =>
+    request.nextUrl.pathname.startsWith(prefix)
+  );
+
+  if (user && isAuthOnly) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 
