@@ -22,7 +22,15 @@ function niceMax(value: number) {
   return Math.ceil(value / magnitude) * magnitude;
 }
 
-export function TrendChart({ data }: { data: DailyVolume[] }) {
+export function TrendChart({
+  data,
+  ariaLabel = "Daily call volume trend",
+  unitLabel = "calls",
+}: {
+  data: DailyVolume[];
+  ariaLabel?: string;
+  unitLabel?: string;
+}) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [showTable, setShowTable] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -75,7 +83,7 @@ export function TrendChart({ data }: { data: DailyVolume[] }) {
           onPointerMove={handlePointerMove}
           onPointerLeave={() => setHoverIndex(null)}
           role="img"
-          aria-label="Daily call volume trend"
+          aria-label={ariaLabel}
         >
           <defs>
             <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
@@ -153,7 +161,7 @@ export function TrendChart({ data }: { data: DailyVolume[] }) {
               top: `${(hovered.y / HEIGHT) * 100}%`,
             }}
           >
-            <div className="trend-tooltip-value">{hovered.count} calls</div>
+            <div className="trend-tooltip-value">{hovered.count} {unitLabel}</div>
             <div className="trend-tooltip-label">{formatDayLabel(hovered.date)}</div>
           </div>
         )}
@@ -169,7 +177,7 @@ export function TrendChart({ data }: { data: DailyVolume[] }) {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Calls</th>
+                <th>{unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1)}</th>
               </tr>
             </thead>
             <tbody>

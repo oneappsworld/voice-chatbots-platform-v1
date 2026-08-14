@@ -133,5 +133,9 @@ export function formatDuration(seconds: number) {
 
 export function formatDayLabel(dateKey: string) {
   const d = new Date(`${dateKey}T00:00:00`);
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  // Pinned to "en-US" rather than the runtime default locale: TrendChart
+  // renders this in a Client Component, and the server's default ICU
+  // locale doesn't always match the browser's ("Jul 16" vs "16 Jul"),
+  // which fails hydration since the two renders produce different text.
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }

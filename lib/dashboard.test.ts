@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeDashboardMetrics, formatDuration, type CallRow } from "./dashboard";
+import { computeDashboardMetrics, formatDuration, formatDayLabel, type CallRow } from "./dashboard";
 
 function callAt(daysAgo: number, outcome: CallRow["outcome"], durationSeconds = 120): CallRow {
   const d = new Date();
@@ -58,5 +58,17 @@ describe("formatDuration", () => {
 
   it("formats a duration under a minute", () => {
     expect(formatDuration(42)).toBe("0m 42s");
+  });
+});
+
+describe("formatDayLabel", () => {
+  it("pins to en-US formatting regardless of runtime default locale", () => {
+    // Regression: this used to pass `undefined` as the locale, which reads
+    // the runtime's default ICU locale. That's consistent on one machine,
+    // but a Client Component rendering it can hydrate on a server with a
+    // different default locale than the browser (e.g. "Jul 16" vs
+    // "16 Jul"), which fails hydration. Pinning to "en-US" makes the output
+    // deterministic across environments.
+    expect(formatDayLabel("2026-07-16")).toBe("Jul 16");
   });
 });
