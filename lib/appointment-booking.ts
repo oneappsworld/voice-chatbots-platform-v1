@@ -160,6 +160,12 @@ const NO_SLOT_MATCH: Record<Language, string> = {
   "zh-CN": "我没有听清您选择的时间——请说出日期和时间，或从列表中选择一个。",
 };
 
+const NO_CONTACT_MATCH: Record<Language, string> = {
+  "en-US": "That doesn't look like an email or phone number — what's the best way to send your confirmation?",
+  "es-ES": "Eso no parece un correo o número de teléfono — ¿cuál es la mejor forma de enviarte la confirmación?",
+  "zh-CN": "这似乎不是邮箱或电话号码——请问发送确认信息最好用哪个邮箱或电话？",
+};
+
 export type ApplyApptResult =
   | { ok: true; state: ApptState; nextPrompt: string | null; done: boolean }
   | { ok: false; state: ApptState; error: string };
@@ -194,7 +200,8 @@ export function applyApptAnswer(
 
   // contact
   const entities = extractEntities(rawText, language);
-  const contact = entities.emails[0] ?? entities.phones[0] ?? rawText.trim();
+  const contact = entities.emails[0] ?? entities.phones[0] ?? null;
+  if (!contact) return { ok: false, state, error: NO_CONTACT_MATCH[language] };
   const next: ApptState = { ...state, contact, step: "done" };
   return { ok: true, state: next, nextPrompt: null, done: true };
 }
