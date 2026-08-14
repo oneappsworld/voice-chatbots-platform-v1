@@ -3,6 +3,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 import { parseInboundMessage, buildOutboundMediaFrame, buildMarkFrame } from "./twilio-media-stream.js";
 import { DeepgramTranscriber, isDeepgramConfigured } from "./deepgram.js";
 import { synthesizeSpeech, isElevenLabsConfigured, chunkAudioFrames } from "./elevenlabs.js";
+import { getBotResponse, isBotBridgeConfigured } from "./bot-bridge.js";
 
 const PORT = Number(process.env.PORT ?? 8080);
 /**
@@ -142,13 +143,21 @@ wss.on("connection", (ws, request) => {
 });
 
 /**
- * Phase E scope: proves the TTS-to-Twilio audio pipe works end-to-end once
- * real audio is flowing — it echoes back what was heard, not a real bot
- * reply. Deciding *what* to say (routing the transcript through the main
- * app's NLU/bot logic in lib/nlu.ts etc.) is separate, not-yet-built work.
+ * Gets a response to speak, then plays it back over the stream. Uses the
+ * real bot bridge (chatsyn.io's NLU/FAQ logic) when configured; falls back
+ * to echoing what was heard when it isn't, same no-op-safe pattern as the
+ * rest of this build being done ahead of credentials.
  */
 async function speakBack(ws: WebSocket, streamSid: string, heardText: string): Promise<void> {
-  const audio = await synthesizeSpeech(`I heard you say: ${heardText}`);
+  let responseText: string;
+  if (isBotBridgeConfigured()) {
+    const bot = await getBotResponse(heardText);
+    responseText = bot.responseText;
+  } else {
+    responseText = `I heard you say: ${heardText}`;
+  }
+
+  const audio = await synthesizeSpeech(responseText);
   for (const frame of chunkAudioFrames(audio)) {
     ws.send(buildOutboundMediaFrame(streamSid, frame.toString("base64")));
   }
