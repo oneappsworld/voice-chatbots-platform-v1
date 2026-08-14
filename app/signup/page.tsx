@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { SignupForm } from "@/components/signup-form";
 
@@ -37,7 +38,9 @@ export default function SignupPage() {
         <p className="auth-subtitle">
           Start your 14-day free trial. No credit card required.
         </p>
-        <SignupForm />
+        <Suspense fallback={null}>
+          <SignupForm />
+        </Suspense>
       </div>
     </div>
   );

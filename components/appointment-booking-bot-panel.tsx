@@ -11,9 +11,10 @@ import {
   type Slot,
 } from "@/lib/appointment-booking";
 import { checkEscalation, handoffMessage, type EscalationReason } from "@/lib/escalation";
-import { getAvailableSlots, bookAppointment, escalateToHuman } from "@/app/bots/actions";
+import { getAvailableSlots, bookAppointment, escalateToHuman, startBotSession } from "@/app/bots/actions";
 import { SpeechRecognizer } from "@/components/speech-recognizer";
 import { HandoffCard } from "@/components/handoff-card";
+import { SessionBlockedBanner } from "@/components/session-blocked-banner";
 import { playBotResponse } from "@/lib/play-bot-response";
 import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
@@ -45,6 +46,7 @@ export function AppointmentBookingBotPanel({
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [speaking, setSpeaking] = useState(false);
   const [voiceEngine, setVoiceEngine] = useState<"elevenlabs" | "browser" | null>(null);
+  const [sessionBlocked, setSessionBlocked] = useState<"plan_gated" | "usage_cap" | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -63,22 +65,35 @@ export function AppointmentBookingBotPanel({
     setVoiceEngine(played.engine);
   }
 
-  function start(lang: Language) {
+  async function start(lang: Language) {
     setLanguage(lang);
     setApptState(initialApptState());
     setSlots([]);
     setConfirmed(false);
     setHandoff(null);
+    setSessionBlocked(null);
+    const session = await startBotSession("appointment_booking");
+    if (!session.ok) {
+      setSessionBlocked(session.reason);
+      return;
+    }
     const greeting = apptPrompt("service", lang);
     setTurns([{ who: "bot", text: greeting }]);
     speak(greeting);
   }
 
   useEffect(() => {
-    // One-time greeting playback on mount — setState happens after the
+    // Meters + gates the very first conversation on mount, same as the
+    // language-switch path in start() below — setState happens after the
     // internal await, not synchronously, so this doesn't cascade-render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    speak(apptPrompt("service", initialLanguage));
+    (async () => {
+      const session = await startBotSession("appointment_booking");
+      if (!session.ok) {
+        setSessionBlocked(session.reason);
+        return;
+      }
+      await speak(apptPrompt("service", initialLanguage));
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -180,7 +195,9 @@ export function AppointmentBookingBotPanel({
         </div>
       </div>
 
-      {!finished && (
+      {sessionBlocked && <SessionBlockedBanner reason={sessionBlocked} language={language} />}
+
+      {!finished && !sessionBlocked && (
         <>
           <div className="form-group">
             <label className="form-label">Answer by voice</label>

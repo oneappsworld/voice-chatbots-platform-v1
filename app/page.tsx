@@ -405,6 +405,12 @@ export default function Home() {
                     <svg viewBox="0 0 24 24" fill="none">
                       <path d="M20 6L9 17l-5-5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
+                    FAQ, Order Status &amp; Appointment Booking bots
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M20 6L9 17l-5-5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                     Pre-built industry template + no-code configuration
                   </li>
                   <li>
@@ -432,7 +438,7 @@ export default function Home() {
                     Email &amp; chat support
                   </li>
                 </ul>
-                <Link href="/signup" className="btn btn-ghost btn-block">
+                <Link href="/signup?plan=starter" className="btn btn-ghost btn-block">
                   Start My 14-Day Trial
                 </Link>
               </div>
@@ -454,6 +460,12 @@ export default function Home() {
                       <path d="M20 6L9 17l-5-5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     Up to 5 voice agents across departments &amp; lines
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M20 6L9 17l-5-5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Everything in Starter, plus the Lead Qualification bot
                   </li>
                   <li>
                     <svg viewBox="0 0 24 24" fill="none">
@@ -486,7 +498,7 @@ export default function Home() {
                     Priority support + dedicated onboarding specialist
                   </li>
                 </ul>
-                <Link href="/signup" className="btn btn-primary btn-block">
+                <Link href="/signup?plan=pro" className="btn btn-primary btn-block">
                   Start My 14-Day Trial
                 </Link>
               </div>

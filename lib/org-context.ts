@@ -1,13 +1,19 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import type { Plan } from "@/lib/plan-limits";
 
 export type OrgRole = "owner" | "admin" | "agent" | "viewer";
+export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";
 
 export type OrgContext = {
   organizationId: string;
   organizationName: string;
   role: OrgRole;
   isAdmin: boolean;
+  plan: Plan;
+  subscriptionStatus: SubscriptionStatus;
+  trialEndsAt: string | null;
+  stripeCustomerId: string | null;
 };
 
 /**
@@ -46,7 +52,11 @@ export const getOrgContext = cache(async (): Promise<OrgContext | null> => {
       .eq("organization_id", profile.organization_id)
       .eq("user_id", user.id)
       .maybeSingle(),
-    supabase.from("organizations").select("name").eq("id", profile.organization_id).maybeSingle(),
+    supabase
+      .from("organizations")
+      .select("name, plan, subscription_status, trial_ends_at, stripe_customer_id")
+      .eq("id", profile.organization_id)
+      .maybeSingle(),
   ]);
 
   if (!membership || membership.status !== "active") return null;
@@ -57,5 +67,9 @@ export const getOrgContext = cache(async (): Promise<OrgContext | null> => {
     organizationName: org?.name ?? "Your organization",
     role,
     isAdmin: role === "owner" || role === "admin",
+    plan: (org?.plan as Plan | undefined) ?? "pro",
+    subscriptionStatus: (org?.subscription_status as SubscriptionStatus | undefined) ?? "active",
+    trialEndsAt: (org?.trial_ends_at as string | null | undefined) ?? null,
+    stripeCustomerId: (org?.stripe_customer_id as string | null | undefined) ?? null,
   };
 });

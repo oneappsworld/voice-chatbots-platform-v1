@@ -16,6 +16,7 @@ import {
 } from "@/lib/escalation";
 import type { Language } from "@/lib/nlu";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { PLAN_LIMITS, planIncludesBot, type BotType, type Plan } from "@/lib/plan-limits";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -29,6 +30,40 @@ async function requireUser() {
 async function getOrganizationId(supabase: SupabaseClient, userId: string): Promise<string | null> {
   const { data } = await supabase.from("profiles").select("organization_id").eq("id", userId).maybeSingle();
   return (data?.organization_id as string | undefined) ?? null;
+}
+
+/**
+ * Gates + meters the start of a bot conversation: checks the org's plan
+ * includes this bot type, then increments the monthly call counter and
+ * checks it against the plan's cap. "One call" = one fresh conversation
+ * (first turn / panel mount), not per-turn — see call sites in each bot
+ * panel. Fails open (allows the session) on missing org or infra errors,
+ * since a metering hiccup shouldn't block a real caller.
+ */
+export async function startBotSession(
+  bot: BotType
+): Promise<{ ok: true } | { ok: false; reason: "plan_gated" | "usage_cap" }> {
+  const { supabase, user } = await requireUser();
+  const organizationId = await getOrganizationId(supabase, user.id);
+  if (!organizationId) return { ok: true };
+
+  const { data: org } = await supabase.from("organizations").select("plan").eq("id", organizationId).maybeSingle();
+  const plan = (org?.plan as Plan | undefined) ?? "pro";
+
+  if (!planIncludesBot(plan, bot)) {
+    return { ok: false, reason: "plan_gated" };
+  }
+
+  const { data: count, error } = await supabase.rpc("increment_call_usage", {
+    p_organization_id: organizationId,
+  });
+  if (error) return { ok: true };
+
+  if ((count as number) > PLAN_LIMITS[plan].maxCallsPerMonth) {
+    return { ok: false, reason: "usage_cap" };
+  }
+
+  return { ok: true };
 }
 
 export async function askFaqBot(text: string, language: Language) {

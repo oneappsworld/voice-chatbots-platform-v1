@@ -5,7 +5,7 @@ import { getOrgContext } from "@/lib/org-context";
 export async function AppHeader({
   active,
 }: {
-  active: "dashboard" | "settings" | "voice-test" | "bots" | "admin";
+  active: "dashboard" | "settings" | "voice-test" | "bots" | "admin" | "billing";
 }) {
   const org = await getOrgContext();
 
@@ -47,6 +47,11 @@ export async function AppHeader({
           {org?.isAdmin && (
             <Link href="/admin" className={active === "admin" ? "active" : ""}>
               Admin
+            </Link>
+          )}
+          {org?.isAdmin && (
+            <Link href="/billing" className={active === "billing" ? "active" : ""}>
+              Billing
             </Link>
           )}
         </nav>

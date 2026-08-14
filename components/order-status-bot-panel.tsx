@@ -1,9 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { checkOrderStatus, listSampleOrderIds, escalateToHuman, getEscalationThreshold } from "@/app/bots/actions";
+import {
+  checkOrderStatus,
+  listSampleOrderIds,
+  escalateToHuman,
+  getEscalationThreshold,
+  startBotSession,
+} from "@/app/bots/actions";
 import { SpeechRecognizer } from "@/components/speech-recognizer";
 import { HandoffCard } from "@/components/handoff-card";
+import { SessionBlockedBanner } from "@/components/session-blocked-banner";
 import { playBotResponse } from "@/lib/play-bot-response";
 import { checkEscalation, handoffMessage, type EscalationReason } from "@/lib/escalation";
 import type { Language } from "@/lib/nlu";
@@ -48,6 +55,7 @@ export function OrderStatusBotPanel({
   const [handoff, setHandoff] = useState<{ agentName: string; reason: EscalationReason; contextSummary: string } | null>(
     null
   );
+  const [sessionBlocked, setSessionBlocked] = useState<"plan_gated" | "usage_cap" | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -66,7 +74,14 @@ export function OrderStatusBotPanel({
   }, []);
 
   async function check(text: string) {
-    if (!text.trim() || handoff) return;
+    if (!text.trim() || handoff || sessionBlocked) return;
+    if (turns.length === 0) {
+      const session = await startBotSession("order_status");
+      if (!session.ok) {
+        setSessionBlocked(session.reason);
+        return;
+      }
+    }
     setChecking(true);
     const nextTurns = [...turns, { who: "user" as const, text }];
     setTurns(nextTurns);
@@ -128,7 +143,9 @@ export function OrderStatusBotPanel({
         </div>
       </div>
 
-      {!handoff && (
+      {sessionBlocked && <SessionBlockedBanner reason={sessionBlocked} language={language} />}
+
+      {!handoff && !sessionBlocked && (
         <>
           <div className="form-group">
             <label className="form-label">Ask by voice</label>

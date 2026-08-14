@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleAuthButton } from "@/components/google-auth-button";
 import { PasswordInput } from "@/components/password-input";
+import type { Plan } from "@/lib/plan-limits";
 
 export function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedPlan: Plan = searchParams.get("plan") === "pro" ? "pro" : "starter";
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +28,7 @@ export function SignupForm() {
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, selected_plan: selectedPlan },
       },
     });
 

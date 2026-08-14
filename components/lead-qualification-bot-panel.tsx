@@ -12,9 +12,10 @@ import {
   type LeadQualification,
 } from "@/lib/lead-qualification";
 import { checkEscalation, handoffMessage, type EscalationReason } from "@/lib/escalation";
-import { saveLead, escalateToHuman } from "@/app/bots/actions";
+import { saveLead, escalateToHuman, startBotSession } from "@/app/bots/actions";
 import { SpeechRecognizer } from "@/components/speech-recognizer";
 import { HandoffCard } from "@/components/handoff-card";
+import { SessionBlockedBanner } from "@/components/session-blocked-banner";
 import { playBotResponse } from "@/lib/play-bot-response";
 import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
@@ -45,6 +46,7 @@ export function LeadQualificationBotPanel({
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [speaking, setSpeaking] = useState(false);
   const [voiceEngine, setVoiceEngine] = useState<"elevenlabs" | "browser" | null>(null);
+  const [sessionBlocked, setSessionBlocked] = useState<"plan_gated" | "usage_cap" | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -63,21 +65,34 @@ export function LeadQualificationBotPanel({
     setVoiceEngine(played.engine);
   }
 
-  function start(lang: Language) {
+  async function start(lang: Language) {
     setLanguage(lang);
     setLeadState(initialLeadState());
     setResult(null);
     setHandoff(null);
+    setSessionBlocked(null);
+    const session = await startBotSession("lead_qualification");
+    if (!session.ok) {
+      setSessionBlocked(session.reason);
+      return;
+    }
     const greeting = leadPrompt("name", lang);
     setTurns([{ who: "bot", text: greeting }]);
     speak(greeting);
   }
 
   useEffect(() => {
-    // One-time greeting playback on mount — setState happens after the
+    // Meters + gates the very first conversation on mount, same as the
+    // language-switch path in start() below — setState happens after the
     // internal await, not synchronously, so this doesn't cascade-render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    speak(leadPrompt("name", initialLanguage));
+    (async () => {
+      const session = await startBotSession("lead_qualification");
+      if (!session.ok) {
+        setSessionBlocked(session.reason);
+        return;
+      }
+      await speak(leadPrompt("name", initialLanguage));
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -154,7 +169,9 @@ export function LeadQualificationBotPanel({
         </div>
       </div>
 
-      {!finished && (
+      {sessionBlocked && <SessionBlockedBanner reason={sessionBlocked} language={language} />}
+
+      {!finished && !sessionBlocked && (
         <>
           <div className="form-group">
             <label className="form-label">Answer by voice</label>

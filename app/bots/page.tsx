@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
@@ -6,6 +7,8 @@ import { FaqBotPanel } from "@/components/faq-bot-panel";
 import { OrderStatusBotPanel } from "@/components/order-status-bot-panel";
 import { LeadQualificationBotPanel } from "@/components/lead-qualification-bot-panel";
 import { AppointmentBookingBotPanel } from "@/components/appointment-booking-bot-panel";
+import { getOrgContext } from "@/lib/org-context";
+import { planIncludesBot } from "@/lib/plan-limits";
 import type { Language } from "@/lib/nlu";
 import type { VoiceStyle } from "@/lib/tts";
 
@@ -31,6 +34,10 @@ export default async function BotsPage() {
 
   const language = (voiceSettings?.language as Language) ?? "en-US";
   const style = (voiceSettings?.style as VoiceStyle) ?? "professional";
+
+  const org = await getOrgContext();
+  const plan = org?.plan ?? "pro";
+  const hasLeadQualification = planIncludesBot(plan, "lead_qualification");
 
   return (
     <div className="dash-shell">
@@ -75,7 +82,16 @@ export default async function BotsPage() {
                 Interviews a prospect — company, team size, use case, budget, timeline —
                 scores their fit, and routes qualified leads to sales.
               </div>
-              <LeadQualificationBotPanel language={language} style={style} />
+              {hasLeadQualification ? (
+                <LeadQualificationBotPanel language={language} style={style} />
+              ) : (
+                <div className="upgrade-prompt">
+                  <p>Lead Qualification is a Pro feature.</p>
+                  <Link href="/billing" className="btn btn-primary">
+                    Upgrade to Pro
+                  </Link>
+                </div>
+              )}
             </section>
 
             <section className="panel">
