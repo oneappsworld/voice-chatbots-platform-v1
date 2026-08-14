@@ -51,6 +51,18 @@ export const DEFAULT_ANSWERS: Record<Language, Record<Intent, string>> = {
     unknown:
       "No estoy segura de haber entendido eso. ¿Puedes reformularlo, o preguntar sobre facturación, citas, contraseña o el estado de tu pedido?",
   },
+  "zh-CN": {
+    greeting: "您好！我是虚拟助手。今天有什么可以帮您的吗？",
+    goodbye: "感谢您的咨询，祝您今天愉快！",
+    booking_scheduling: "我可以帮您预约或改期。我们的团队会确认时间，并通过邮件或短信尽快回复您。",
+    order_status: "听起来您想查询订单。请提供订单号，例如 ORD-10234，我可以帮您查询状态。",
+    billing: "关于账单问题，我可以查看您的账户和最近的发票。如果有收费不对，我会标记给账单团队核实并在需要时退款。",
+    password_reset: "我可以帮您重置密码。我会向您的注册邮箱发送一个安全的重置链接，请稍后查看收件箱。",
+    complaint: "非常抱歉给您带来不便。我已将此记录为优先处理事项，我们团队会尽快跟进。",
+    question: "这是个好问题。能再多告诉我一些吗——是关于账单、预约、密码重置，还是订单？",
+    request: "很乐意帮您处理。能再提供一些细节吗？",
+    unknown: "我不太确定理解您的意思。能换个说法吗？或者可以问账单、预约、密码重置或订单状态相关的问题。",
+  },
 };
 
 export function answerFaq(text: string, language: Language): FaqAnswer {

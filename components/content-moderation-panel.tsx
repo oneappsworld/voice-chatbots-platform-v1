@@ -7,6 +7,7 @@ import { ALL_INTENTS, INTENT_LABELS, type Intent, type Language } from "@/lib/nl
 const LANGUAGES: { value: Language; label: string }[] = [
   { value: "en-US", label: "English (US)" },
   { value: "es-ES", label: "Spanish (Spain)" },
+  { value: "zh-CN", label: "Chinese (Simplified)" },
 ];
 
 function overrideKey(language: Language, intent: Intent) {

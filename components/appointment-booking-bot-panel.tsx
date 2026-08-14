@@ -24,6 +24,7 @@ type Turn = { who: "user" | "bot"; text: string };
 const RETRY_MESSAGE: Record<Language, string> = {
   "en-US": "Sorry, that time was just taken — here are fresh options.",
   "es-ES": "Lo siento, ese horario se acaba de ocupar — aquí tienes otras opciones.",
+  "zh-CN": "抱歉，该时间刚刚被预约——这里是新的可选时间。",
 };
 
 export function AppointmentBookingBotPanel({
@@ -192,6 +193,9 @@ export function AppointmentBookingBotPanel({
           <button type="button" className={`pill${language === "es-ES" ? " active" : ""}`} onClick={() => start("es-ES")}>
             Spanish (Spain)
           </button>
+          <button type="button" className={`pill${language === "zh-CN" ? " active" : ""}`} onClick={() => start("zh-CN")}>
+            Chinese (Simplified)
+          </button>
         </div>
       </div>
 
@@ -259,9 +263,17 @@ export function AppointmentBookingBotPanel({
               type="button"
               className="escalate-link"
               disabled={busy}
-              onClick={() => submit(language === "en-US" ? "I'd like to talk to a human, please." : "Quiero hablar con una persona, por favor.")}
+              onClick={() =>
+                submit(
+                  language === "en-US"
+                    ? "I'd like to talk to a human, please."
+                    : language === "es-ES"
+                      ? "Quiero hablar con una persona, por favor."
+                      : "我想转人工，谢谢。"
+                )
+              }
             >
-              {language === "en-US" ? "Talk to a human instead" : "Hablar con una persona"}
+              {language === "en-US" ? "Talk to a human instead" : language === "es-ES" ? "Hablar con una persona" : "转接人工客服"}
             </button>
           </div>
         </>

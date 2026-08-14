@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { lookupZendeskCustomer, ZendeskApiError } from "@/lib/zendesk";
+import type { Language } from "@/lib/nlu";
 import { refreshAccessToken, ZendeskOAuthError } from "@/lib/zendesk-oauth";
 import {
   verifyApiKey,
@@ -87,7 +88,7 @@ export async function lookupCustomer(email: string) {
 export async function saveVoiceSettings(input: {
   personaName: string;
   greeting: string;
-  language: "en-US" | "es-ES";
+  language: Language;
   style: "warm" | "professional" | "energetic";
 }) {
   const { supabase, user } = await requireUser();

@@ -13,23 +13,23 @@ export type Service = { value: string; label: Record<Language, string>; keywords
 export const SERVICES: Service[] = [
   {
     value: "consultation",
-    label: { "en-US": "Consultation call", "es-ES": "Llamada de consulta" },
-    keywords: { "en-US": ["consultation", "consult"], "es-ES": ["consulta", "consultoría"] },
+    label: { "en-US": "Consultation call", "es-ES": "Llamada de consulta", "zh-CN": "咨询电话" },
+    keywords: { "en-US": ["consultation", "consult"], "es-ES": ["consulta", "consultoría"], "zh-CN": ["咨询", "顾问"] },
   },
   {
     value: "demo",
-    label: { "en-US": "Product demo", "es-ES": "Demostración del producto" },
-    keywords: { "en-US": ["demo", "demonstration"], "es-ES": ["demostración", "demo"] },
+    label: { "en-US": "Product demo", "es-ES": "Demostración del producto", "zh-CN": "产品演示" },
+    keywords: { "en-US": ["demo", "demonstration"], "es-ES": ["demostración", "demo"], "zh-CN": ["演示", "产品演示"] },
   },
   {
     value: "onboarding",
-    label: { "en-US": "Onboarding session", "es-ES": "Sesión de incorporación" },
-    keywords: { "en-US": ["onboarding", "getting started", "setup session"], "es-ES": ["incorporación", "sesión de inicio", "configuración"] },
+    label: { "en-US": "Onboarding session", "es-ES": "Sesión de incorporación", "zh-CN": "入职培训" },
+    keywords: { "en-US": ["onboarding", "getting started", "setup session"], "es-ES": ["incorporación", "sesión de inicio", "configuración"], "zh-CN": ["入职", "上手", "入门培训", "初始设置"] },
   },
   {
     value: "support",
-    label: { "en-US": "Support visit", "es-ES": "Visita de soporte" },
-    keywords: { "en-US": ["support", "help session", "troubleshooting"], "es-ES": ["soporte", "ayuda", "resolución de problemas"] },
+    label: { "en-US": "Support visit", "es-ES": "Visita de soporte", "zh-CN": "支持服务" },
+    keywords: { "en-US": ["support", "help session", "troubleshooting"], "es-ES": ["soporte", "ayuda", "resolución de problemas"], "zh-CN": ["支持", "帮助", "故障排查"] },
   },
 ];
 
@@ -95,6 +95,7 @@ export function generateSlots(
 const ORDINAL_WORDS: Record<Language, string[]> = {
   "en-US": ["first", "second", "third", "fourth", "fifth", "sixth"],
   "es-ES": ["primero", "segundo", "tercero", "cuarto", "quinto", "sexto"],
+  "zh-CN": ["第一个", "第二个", "第三个", "第四个", "第五个", "第六个"],
 };
 
 /** Matches a chip click (exact label) or freeform speech (ordinal, number, or weekday+hour) to one of the offered slots. */
@@ -139,16 +140,24 @@ const PROMPTS: Record<Language, Record<Exclude<ApptStep, "done">, string>> = {
     name: "Perfecto, ¿a nombre de quién pongo la reserva?",
     contact: "¿Cuál es el mejor correo o número de teléfono para enviar la confirmación?",
   },
+  "zh-CN": {
+    service: "好的——您想预约什么服务：咨询、产品演示、入职培训，还是支持服务？",
+    slot: "以下是最近可预约的时间——请选择一个，或直接说出来。",
+    name: "好的，请问预约人姓名是？",
+    contact: "最后，发送确认信息最好用哪个邮箱或电话号码？",
+  },
 };
 
 const NO_SERVICE_MATCH: Record<Language, string> = {
   "en-US": "I didn't catch which service — try consultation, demo, onboarding, or support.",
   "es-ES": "No entendí bien el servicio — intenta con consulta, demostración, incorporación o soporte.",
+  "zh-CN": "我没有听清您想预约哪种服务——请尝试说咨询、产品演示、入职培训或支持服务。",
 };
 
 const NO_SLOT_MATCH: Record<Language, string> = {
   "en-US": "I didn't catch which time — say the day and time, or pick one from the list.",
   "es-ES": "No entendí bien el horario — di el día y la hora, o elige uno de la lista.",
+  "zh-CN": "我没有听清您选择的时间——请说出日期和时间，或从列表中选择一个。",
 };
 
 export type ApplyApptResult =
@@ -197,7 +206,11 @@ export function apptPrompt(step: Exclude<ApptStep, "done">, language: Language):
 export function confirmationMessage(state: ApptState, language: Language): string {
   const serviceLabel = state.service?.label[language] ?? "";
   const slotLabel = state.slot?.label ?? "";
-  return language === "en-US"
-    ? `You're all set, ${state.customerName}! Your ${serviceLabel.toLowerCase()} is booked for ${slotLabel}, and we'll send confirmation to ${state.contact}.`
-    : `¡Listo, ${state.customerName}! Tu ${serviceLabel.toLowerCase()} está reservada para el ${slotLabel}, y enviaremos la confirmación a ${state.contact}.`;
+  if (language === "en-US") {
+    return `You're all set, ${state.customerName}! Your ${serviceLabel.toLowerCase()} is booked for ${slotLabel}, and we'll send confirmation to ${state.contact}.`;
+  }
+  if (language === "es-ES") {
+    return `¡Listo, ${state.customerName}! Tu ${serviceLabel.toLowerCase()} está reservada para el ${slotLabel}, y enviaremos la confirmación a ${state.contact}.`;
+  }
+  return `太好了，${state.customerName}！您的${serviceLabel}已预约在${slotLabel}，确认信息将发送至${state.contact}。`;
 }

@@ -4,6 +4,7 @@ import { reasonLabel, type EscalationReason } from "@/lib/escalation";
 const LABELS: Record<Language, { title: string; connected: string; context: string }> = {
   "en-US": { title: "Transferred to a live agent", connected: "Connected", context: "Context passed to agent" },
   "es-ES": { title: "Transferido a un agente en vivo", connected: "Conectado", context: "Contexto enviado al agente" },
+  "zh-CN": { title: "已转接人工客服", connected: "已连接", context: "已传递给客服的背景信息" },
 };
 
 export function HandoffCard({

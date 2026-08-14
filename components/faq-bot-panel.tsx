@@ -28,6 +28,14 @@ const EXAMPLES: Record<Language, string[]> = {
     "No funciona y estoy frustrado",
     "¿Cuáles son sus horarios?",
   ],
+  "zh-CN": [
+    "你好，早上好",
+    "我可以预约吗？",
+    "账单多收费了",
+    "我忘记密码了",
+    "这个坏了，我很生气",
+    "你们的营业时间是几点？",
+  ],
 };
 
 type Turn = { who: "user" | "bot"; text: string; intent?: string; confidence?: number };
@@ -134,6 +142,9 @@ export function FaqBotPanel({
           <button type="button" className={`pill${language === "es-ES" ? " active" : ""}`} onClick={() => setLanguage("es-ES")}>
             Spanish (Spain)
           </button>
+          <button type="button" className={`pill${language === "zh-CN" ? " active" : ""}`} onClick={() => setLanguage("zh-CN")}>
+            Chinese (Simplified)
+          </button>
         </div>
       </div>
 
@@ -187,9 +198,17 @@ export function FaqBotPanel({
               type="button"
               className="escalate-link"
               disabled={asking}
-              onClick={() => ask(language === "en-US" ? "I'd like to talk to a human, please." : "Quiero hablar con una persona, por favor.")}
+              onClick={() =>
+                ask(
+                  language === "en-US"
+                    ? "I'd like to talk to a human, please."
+                    : language === "es-ES"
+                      ? "Quiero hablar con una persona, por favor."
+                      : "我想转人工，谢谢。"
+                )
+              }
             >
-              {language === "en-US" ? "Talk to a human instead" : "Hablar con una persona"}
+              {language === "en-US" ? "Talk to a human instead" : language === "es-ES" ? "Hablar con una persona" : "转接人工客服"}
             </button>
           </div>
         </>

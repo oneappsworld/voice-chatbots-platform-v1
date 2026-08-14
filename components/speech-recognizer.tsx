@@ -171,7 +171,10 @@ export function SpeechRecognizer({
             <span className="stt-dot" /> Listening…
           </span>
         ) : (
-          <span>Press the mic and speak in {language === "en-US" ? "English" : "Spanish"}</span>
+          <span>
+            Press the mic and speak in{" "}
+            {language === "en-US" ? "English" : language === "es-ES" ? "Spanish" : "Chinese"}
+          </span>
         )}
         {interim && <p className="stt-interim">&ldquo;{interim}&rdquo;</p>}
         {error && <p className="auth-error" style={{ marginTop: 10 }}>{error}</p>}

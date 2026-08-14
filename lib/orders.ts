@@ -32,6 +32,13 @@ const STATUS_SPOKEN: Record<Language, Record<OrderStatus, string>> = {
     delivered: "entregado",
     cancelled: "cancelado",
   },
+  "zh-CN": {
+    processing: "处理中",
+    shipped: "已发货",
+    in_transit: "运输中",
+    delivered: "已送达",
+    cancelled: "已取消",
+  },
 };
 
 export function statusSpoken(status: OrderStatus, language: Language): string {
@@ -44,15 +51,15 @@ export function formatOrderAnswer(
   requestedId: string
 ): string {
   if (!input) {
-    return language === "en-US"
-      ? `I couldn't find an order with ID ${requestedId}. Please double-check the number and try again.`
-      : `No pude encontrar un pedido con el número ${requestedId}. Por favor verifica el número e inténtalo de nuevo.`;
+    if (language === "en-US") return `I couldn't find an order with ID ${requestedId}. Please double-check the number and try again.`;
+    if (language === "es-ES") return `No pude encontrar un pedido con el número ${requestedId}. Por favor verifica el número e inténtalo de nuevo.`;
+    return `我没有找到订单号为 ${requestedId} 的订单。请核对订单号后重试。`;
   }
 
   const date = new Date(input.updatedAt).toLocaleDateString(language, { month: "long", day: "numeric" });
   const spoken = statusSpoken(input.status, language);
 
-  return language === "en-US"
-    ? `Order ${input.orderNumber}, ${input.item}, is currently ${spoken}. It was last updated on ${date}.`
-    : `El pedido ${input.orderNumber}, ${input.item}, está actualmente ${spoken}. Se actualizó por última vez el ${date}.`;
+  if (language === "en-US") return `Order ${input.orderNumber}, ${input.item}, is currently ${spoken}. It was last updated on ${date}.`;
+  if (language === "es-ES") return `El pedido ${input.orderNumber}, ${input.item}, está actualmente ${spoken}. Se actualizó por última vez el ${date}.`;
+  return `订单 ${input.orderNumber}（${input.item}）目前状态为${spoken}，最后更新时间是 ${date}。`;
 }

@@ -26,6 +26,16 @@ const EXAMPLES: Record<Language, string[]> = {
     "¿Cuáles son sus horarios?",
     "Gracias, eso es todo, adiós",
   ],
+  "zh-CN": [
+    "你好，早上好",
+    "我明天可以预约吗？",
+    "我的订单在哪里？还没有发货",
+    "我上次的账单多收费了",
+    "我忘记密码了，登录不了",
+    "这个坏了，我真的很生气",
+    "你们的营业时间是几点？",
+    "谢谢，就这些，再见",
+  ],
 };
 
 const INTENT_LABELS: Record<NluResult["intent"], string> = {
@@ -106,6 +116,13 @@ export function VoiceTestConsole({ initialLanguage }: { initialLanguage: Languag
             onClick={() => setLanguage("es-ES")}
           >
             Spanish (Spain)
+          </button>
+          <button
+            type="button"
+            className={`pill${language === "zh-CN" ? " active" : ""}`}
+            onClick={() => setLanguage("zh-CN")}
+          >
+            Chinese (Simplified)
           </button>
         </div>
       </div>

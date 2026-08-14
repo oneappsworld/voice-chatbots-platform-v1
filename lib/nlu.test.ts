@@ -21,6 +21,16 @@ describe("containsPhrase", () => {
     expect(containsPhrase("around 5000 per month", "500")).toBe(false);
     expect(containsPhrase("around 500 per month", "500")).toBe(true);
   });
+
+  it("matches a Han-script phrase via substring, since Chinese has no word-delimiting spaces", () => {
+    expect(containsPhrase("你好，今天天气怎么样", "你好")).toBe(true);
+    expect(containsPhrase("我的订单在哪里", "订单")).toBe(true);
+  });
+
+  it("still applies numeric boundary protection within a Chinese sentence", () => {
+    expect(containsPhrase("大概5000元一个月", "500")).toBe(false);
+    expect(containsPhrase("大概500元一个月", "500")).toBe(true);
+  });
 });
 
 describe("classifyIntent", () => {
@@ -47,6 +57,31 @@ describe("classifyIntent", () => {
   it("classifies Spanish greetings the same way as English", () => {
     const result = classifyIntent("Hola, buenos días", "es-ES");
     expect(result.intent).toBe("greeting");
+  });
+
+  it("classifies a Chinese greeting embedded in a longer sentence with no spaces", () => {
+    // Regression risk: Chinese has no word-delimiting spaces, so the
+    // English/Spanish word-boundary check would silently fail to match a
+    // real keyword embedded in a sentence — containsPhrase must fall back
+    // to substring matching for Han-script keywords. See its Han-script
+    // comment in nlu.ts for why this is correct behavior, not a bug.
+    const result = classifyIntent("你好，今天天气怎么样", "zh-CN");
+    expect(result.intent).toBe("greeting");
+  });
+
+  it("classifies a Chinese order-status question", () => {
+    const result = classifyIntent("我的订单在哪里？还没有发货", "zh-CN");
+    expect(result.intent).toBe("order_status");
+  });
+
+  it("classifies a Chinese complaint", () => {
+    const result = classifyIntent("这个坏了，我真的很生气", "zh-CN");
+    expect(result.intent).toBe("complaint");
+  });
+
+  it("classifies a Chinese question marked by the trailing 吗 particle", () => {
+    const result = classifyIntent("你们营业吗", "zh-CN");
+    expect(result.intent).toBe("question");
   });
 });
 

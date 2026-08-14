@@ -26,6 +26,23 @@ describe("applyLeadAnswer — budget bucket matching", () => {
 
     expect(state.answers.budget).toBe("under_500");
   });
+
+  it("buckets a Chinese ¥5000/mo budget correctly with the number directly against Han characters", () => {
+    // Regression: Chinese text has no space between a number and the
+    // surrounding characters ("大概5000元" — no space at all), so the
+    // original numeral boundary check (which required a non-letter on
+    // both sides) never matched real Chinese phrasing. Fixed in
+    // containsPhrase to only reject an adjacent *digit*, not an adjacent
+    // Han character — see lib/nlu.ts.
+    let state = initialLeadState();
+    state = applyLeadAnswer(state, "王先生", "zh-CN").state; // name
+    state = applyLeadAnswer(state, "宏图机器人", "zh-CN").state; // company
+    state = applyLeadAnswer(state, "11-50人", "zh-CN").state; // team_size
+    state = applyLeadAnswer(state, "客户支持自动化", "zh-CN").state; // use_case
+    state = applyLeadAnswer(state, "大概5000元一个月", "zh-CN").state; // budget
+
+    expect(state.answers.budget).toBe("2k_10k");
+  });
 });
 
 describe("applyLeadAnswer — email extraction", () => {

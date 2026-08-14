@@ -10,6 +10,7 @@ type Style = VoiceStyle;
 const LANGUAGES: { value: Language; label: string }[] = [
   { value: "en-US", label: "English (US)" },
   { value: "es-ES", label: "Spanish (Spain)" },
+  { value: "zh-CN", label: "Chinese (Simplified)" },
 ];
 
 const STYLES = VOICE_STYLES;
