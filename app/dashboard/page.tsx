@@ -8,6 +8,7 @@ import { OutcomeBreakdown } from "@/components/outcome-breakdown";
 import { TopicsList } from "@/components/topics-list";
 import { SignUpTracker } from "@/components/signup-tracker";
 import { computeDashboardMetrics, formatDuration, type CallRow } from "@/lib/dashboard";
+import { sendWelcomeEmailIfDue } from "@/lib/send-welcome-email";
 
 export const metadata: Metadata = {
   title: "Dashboard — ChatSyn",
@@ -28,6 +29,10 @@ export default async function DashboardPage({
   if (!user) {
     redirect("/login");
   }
+
+  // Never let an email-provider hiccup break the dashboard — this is a
+  // nice-to-have side effect, not part of the page's actual job.
+  await sendWelcomeEmailIfDue(user.id).catch(() => {});
 
   const { data: profile } = await supabase
     .from("profiles")

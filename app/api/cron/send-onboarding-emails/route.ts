@@ -7,11 +7,18 @@ import { buildOnboardingEmail, type SequenceStep } from "@/lib/onboarding-emails
 const APP_URL = "https://chatsyn.io";
 
 /**
- * Triggered by Vercel Cron (see vercel.json). Sends every onboarding_emails
- * row that's due (scheduled_at <= now, status='pending') and hasn't been
- * unsubscribed from. Rows are seeded per-user at signup by handle_new_user
- * — this route only sends what's already scheduled, it doesn't decide who
- * gets the sequence.
+ * Triggered by Vercel Cron (see vercel.json — runs once daily, the most
+ * frequent schedule this project's Vercel plan allows). Sends every
+ * onboarding_emails row that's due (scheduled_at <= now, status='pending')
+ * and hasn't been unsubscribed from. Rows are seeded per-user at signup by
+ * handle_new_user — this route only sends what's already scheduled, it
+ * doesn't decide who gets the sequence.
+ *
+ * Step 1 (the "immediate" welcome email) doesn't wait for this daily run —
+ * see lib/send-welcome-email.ts, called from the dashboard the moment a
+ * new user first lands there. This route still picks up any step-1 row
+ * that one missed (e.g. Resend wasn't configured yet at signup time), so
+ * it's a real fallback, not dead code.
  *
  * If Resend or the unsubscribe secret isn't configured yet, this
  * deliberately leaves every due row untouched (still 'pending') rather than
