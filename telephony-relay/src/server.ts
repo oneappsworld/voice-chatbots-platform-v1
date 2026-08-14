@@ -1,7 +1,8 @@
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
-import { parseInboundMessage } from "./twilio-media-stream.js";
+import { parseInboundMessage, buildOutboundMediaFrame, buildMarkFrame } from "./twilio-media-stream.js";
 import { DeepgramTranscriber, isDeepgramConfigured } from "./deepgram.js";
+import { synthesizeSpeech, isElevenLabsConfigured, chunkAudioFrames } from "./elevenlabs.js";
 
 const PORT = Number(process.env.PORT ?? 8080);
 /**
@@ -74,14 +75,19 @@ wss.on("connection", (ws, request) => {
           const transcriber = new DeepgramTranscriber({
             callSid: session.callSid,
             onTranscript: (result) => {
-              // Phase E hook point: once a final transcript lands here,
-              // hand it to the bot logic (lib/nlu.ts etc. in the main app)
-              // and speak the response back via ElevenLabs + sendMedia.
               console.log("[deepgram] transcript", {
                 callSid: session.callSid,
                 isFinal: result.isFinal,
                 transcript: result.transcript,
               });
+              if (result.isFinal && result.transcript.trim() && isElevenLabsConfigured()) {
+                void speakBack(ws, session.streamSid, result.transcript).catch((err) => {
+                  console.error("[elevenlabs] failed to speak response", {
+                    callSid: session.callSid,
+                    err: err instanceof Error ? err.message : String(err),
+                  });
+                });
+              }
             },
             onError: (err) => {
               console.error("[deepgram] error", { callSid: session.callSid, err: err.message });
@@ -134,6 +140,20 @@ wss.on("connection", (ws, request) => {
     sessions.delete(ws);
   });
 });
+
+/**
+ * Phase E scope: proves the TTS-to-Twilio audio pipe works end-to-end once
+ * real audio is flowing — it echoes back what was heard, not a real bot
+ * reply. Deciding *what* to say (routing the transcript through the main
+ * app's NLU/bot logic in lib/nlu.ts etc.) is separate, not-yet-built work.
+ */
+async function speakBack(ws: WebSocket, streamSid: string, heardText: string): Promise<void> {
+  const audio = await synthesizeSpeech(`I heard you say: ${heardText}`);
+  for (const frame of chunkAudioFrames(audio)) {
+    ws.send(buildOutboundMediaFrame(streamSid, frame.toString("base64")));
+  }
+  ws.send(buildMarkFrame(streamSid, "response-complete"));
+}
 
 httpServer.listen(PORT, () => {
   console.log(`[relay] listening on :${PORT} (ws path /media-stream, health at /health)`);
