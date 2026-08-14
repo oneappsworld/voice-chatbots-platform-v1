@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { generateSlots, matchSlot, matchService } from "./appointment-booking";
+import { generateSlots, matchSlot, matchService, applyApptAnswer } from "./appointment-booking";
+import type { ApptState } from "./appointment-booking";
 
 describe("generateSlots", () => {
   it("never generates a slot on a Saturday or Sunday", () => {
@@ -58,5 +59,48 @@ describe("matchService", () => {
 
   it("returns null for unrecognized service text", () => {
     expect(matchService("something completely unrelated", "en-US")).toBeNull();
+  });
+});
+
+describe("applyApptAnswer — contact step", () => {
+  // Regression: ISSUE-001 — appointment booking accepted arbitrary text as
+  // the contact value when it wasn't a recognizable email or phone number,
+  // confirming the booking with a contact no confirmation could ever reach.
+  // Found by /qa on 2026-08-14
+  // Report: .gstack/qa-reports/qa-report-chatsyn-io-2026-08-14.md
+  const contactStepState: ApptState = {
+    step: "contact",
+    service: { value: "demo", label: { "en-US": "Product demo", "es-ES": "", "zh-CN": "" }, keywords: { "en-US": [], "es-ES": [], "zh-CN": [] } },
+    slot: { iso: "2026-08-17T10:00:00.000Z", label: "Mon, Aug 17, 10:00 AM", weekday: "mon", hour: 10 },
+    customerName: "Jamie Valid",
+    contact: null,
+  };
+
+  it("rejects text with no email or phone and re-prompts instead of confirming", () => {
+    const result = applyApptAnswer(contactStepState, "asdf not an email or phone", "en-US");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.state.step).toBe("contact");
+      expect(result.state.contact).toBeNull();
+      expect(result.error).toBeTruthy();
+    }
+  });
+
+  it("accepts a real email as contact and completes the booking", () => {
+    const result = applyApptAnswer(contactStepState, "jamie.valid@example.com", "en-US");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.contact).toBe("jamie.valid@example.com");
+      expect(result.done).toBe(true);
+    }
+  });
+
+  it("accepts a real phone number as contact and completes the booking", () => {
+    const result = applyApptAnswer(contactStepState, "555-123-4567", "en-US");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.contact).toBe("555-123-4567");
+      expect(result.done).toBe(true);
+    }
   });
 });
