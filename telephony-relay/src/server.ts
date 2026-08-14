@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { parseInboundMessage } from "./twilio-media-stream.js";
+import { DeepgramTranscriber, isDeepgramConfigured } from "./deepgram.js";
 
 const PORT = Number(process.env.PORT ?? 8080);
 /**
@@ -18,6 +19,7 @@ interface CallSession {
   accountSid: string;
   mediaChunkCount: number;
   startedAt: number;
+  transcriber: DeepgramTranscriber | null;
 }
 
 const sessions = new Map<WebSocket, CallSession>();
@@ -59,6 +61,7 @@ wss.on("connection", (ws, request) => {
           accountSid: message.start.accountSid,
           mediaChunkCount: 0,
           startedAt: Date.now(),
+          transcriber: null,
         };
         sessions.set(ws, session);
         console.log("[relay] call started", {
@@ -66,6 +69,27 @@ wss.on("connection", (ws, request) => {
           streamSid: session.streamSid,
           mediaFormat: message.start.mediaFormat,
         });
+
+        if (isDeepgramConfigured()) {
+          const transcriber = new DeepgramTranscriber({
+            callSid: session.callSid,
+            onTranscript: (result) => {
+              // Phase E hook point: once a final transcript lands here,
+              // hand it to the bot logic (lib/nlu.ts etc. in the main app)
+              // and speak the response back via ElevenLabs + sendMedia.
+              console.log("[deepgram] transcript", {
+                callSid: session.callSid,
+                isFinal: result.isFinal,
+                transcript: result.transcript,
+              });
+            },
+            onError: (err) => {
+              console.error("[deepgram] error", { callSid: session.callSid, err: err.message });
+            },
+          });
+          transcriber.connect();
+          session.transcriber = transcriber;
+        }
         break;
       }
 
@@ -73,15 +97,13 @@ wss.on("connection", (ws, request) => {
         const session = sessions.get(ws);
         if (!session) break;
         session.mediaChunkCount += 1;
-        // Phase C hook point: each `message.media.payload` is a base64
-        // mu-law 8kHz frame. Once Deepgram streaming STT is wired in,
-        // forward it here instead of just counting frames — e.g.
-        // `deepgramConnection.send(Buffer.from(message.media.payload, "base64"))`.
+        session.transcriber?.sendAudio(Buffer.from(message.media.payload, "base64"));
         break;
       }
 
       case "stop": {
         const session = sessions.get(ws);
+        session?.transcriber?.close();
         console.log("[relay] call stopped", {
           callSid: session?.callSid ?? message.stop.callSid,
           mediaChunksReceived: session?.mediaChunkCount ?? 0,
@@ -102,11 +124,13 @@ wss.on("connection", (ws, request) => {
   });
 
   ws.on("close", () => {
+    sessions.get(ws)?.transcriber?.close();
     sessions.delete(ws);
   });
 
   ws.on("error", (err) => {
     console.error("[relay] websocket error", err);
+    sessions.get(ws)?.transcriber?.close();
     sessions.delete(ws);
   });
 });
