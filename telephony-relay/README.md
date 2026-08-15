@@ -37,3 +37,5 @@ TwiML is generated — the relay rejects any connection without a matching
 - `PORT` — set automatically by Railway.
 - `RELAY_SHARED_SECRET` — optional in dev, required before pointing a real
   Twilio number here.
+- `TELEPHONY_BRIDGE_URL` / `TELEPHONY_BRIDGE_SECRET` — bridge back into the
+  main app's real NLU/bot logic (`POST /api/twilio/respond`).
